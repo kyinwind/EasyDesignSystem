@@ -128,6 +128,7 @@ public struct EDSPillTone: Sendable {
 // MARK: - EDSPill
 
 public struct EDSPill: View {
+    @Environment(\.edsTheme) private var theme
     let title: String
     let tone: EDSPillTone
     let minWidth: CGFloat?
@@ -155,7 +156,7 @@ public struct EDSPill: View {
     public var body: some View {
         ZStack {
             Text(verbatim: title)
-                .font(EDSTheme.shared.typography.captionStrong)
+                .font(theme.typography.captionStrong)
                 .foregroundStyle(tone.foreground)
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
@@ -167,12 +168,12 @@ public struct EDSPill: View {
             }
         }
         .frame(minWidth: minWidth, alignment: .leading)
-        .padding(.horizontal, EDSTheme.shared.spacing.sm)
-        .padding(.vertical, EDSTheme.shared.spacing.xs)
+        .padding(.horizontal, theme.spacing.sm)
+        .padding(.vertical, theme.spacing.xs)
         .background(tone.background)
         .overlay(
             Capsule()
-                .stroke(tone.border, lineWidth: EDSTheme.shared.stroke.hairline)
+                .stroke(tone.border, lineWidth: theme.stroke.hairline)
         )
         .clipShape(Capsule())
         .contentShape(Capsule())
@@ -217,10 +218,11 @@ public enum EDSPillFlowSortOrder: Sendable {
 
 /// 流式 pill 标签列表。标签会按展示顺序轮换浅色背景，形成轻量的随机色效果。
 public struct EDSPillFlow: View {
+    @Environment(\.edsTheme) private var theme
     let items: [String]
     let sortOrder: EDSPillFlowSortOrder
-    let horizontalSpacing: CGFloat
-    let verticalSpacing: CGFloat
+    let horizontalSpacing: CGFloat?
+    let verticalSpacing: CGFloat?
     let minItemWidth: CGFloat?
     let palette: [EDSPillTone]
     let showsRemoveButton: Bool
@@ -230,8 +232,8 @@ public struct EDSPillFlow: View {
     public init(
         _ items: [String],
         sortOrder: EDSPillFlowSortOrder = .original,
-        horizontalSpacing: CGFloat = EDSTheme.shared.spacing.sm,
-        verticalSpacing: CGFloat = EDSTheme.shared.spacing.sm,
+        horizontalSpacing: CGFloat? = nil,
+        verticalSpacing: CGFloat? = nil,
         minItemWidth: CGFloat? = nil,
         palette: [EDSPillTone] = EDSPillTone.defaultPalette,
         showsRemoveButton: Bool = false,
@@ -251,8 +253,8 @@ public struct EDSPillFlow: View {
 
     public var body: some View {
         EDSFlowLayout(
-            horizontalSpacing: horizontalSpacing,
-            verticalSpacing: verticalSpacing
+            horizontalSpacing: horizontalSpacing ?? theme.spacing.sm,
+            verticalSpacing: verticalSpacing ?? theme.spacing.sm
         ) {
             ForEach(Array(sortedItems.enumerated()), id: \.offset) { index, item in
                 EDSPill(

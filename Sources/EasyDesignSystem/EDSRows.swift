@@ -3,6 +3,7 @@ import SwiftUI
 // MARK: - EDSSettingRow
 
 public struct EDSSettingRow<Trailing: View>: View {
+    @Environment(\.edsTheme) private var theme
     let title: LocalizedStringKey
     let subtitle: String?
     let trailing: Trailing
@@ -18,52 +19,53 @@ public struct EDSSettingRow<Trailing: View>: View {
     }
 
     public var body: some View {
-        HStack(alignment: .center, spacing: EDSTheme.shared.spacing.md) {
-            VStack(alignment: .leading, spacing: EDSTheme.shared.spacing.xxs) {
+        HStack(alignment: .center, spacing: theme.spacing.md) {
+            VStack(alignment: .leading, spacing: theme.spacing.xxs) {
                 Text(title)
-                    .font(EDSTheme.shared.typography.bodyStrong)
-                    .foregroundStyle(EDSTheme.shared.colors.textPrimary)
+                    .font(theme.typography.bodyStrong)
+                    .foregroundStyle(theme.colors.textPrimary)
 
                 if let subtitle, !subtitle.isEmpty {
                     Text(subtitle)
-                        .font(EDSTheme.shared.typography.caption)
-                        .foregroundStyle(EDSTheme.shared.colors.textSecondary)
+                        .font(theme.typography.caption)
+                        .foregroundStyle(theme.colors.textSecondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
             }
 
-            Spacer(minLength: EDSTheme.shared.spacing.md)
+            Spacer(minLength: theme.spacing.md)
             trailing
         }
-        .frame(minHeight: EDSTheme.shared.controlSize.rowMinHeight)
+        .frame(minHeight: theme.controlSize.rowMinHeight)
     }
 }
 
 // MARK: - EDSValueRow
 
 public struct EDSValueRow: View {
+    @Environment(\.edsTheme) private var theme
     let title: LocalizedStringKey
     let value: String
-    let tone: Color
+    let tone: Color?
 
-    public init(_ title: LocalizedStringKey, value: String, tone: Color = EDSTheme.shared.colors.textPrimary) {
+    public init(_ title: LocalizedStringKey, value: String, tone: Color? = nil) {
         self.title = title
         self.value = value
         self.tone = tone
     }
 
     public var body: some View {
-        HStack(spacing: EDSTheme.shared.spacing.md) {
+        HStack(spacing: theme.spacing.md) {
             Text(title)
-                .font(EDSTheme.shared.typography.body)
-                .foregroundStyle(EDSTheme.shared.colors.textSecondary)
+                .font(theme.typography.body)
+                .foregroundStyle(theme.colors.textSecondary)
 
             Spacer()
 
             Text(value)
-                .font(EDSTheme.shared.typography.bodyStrong)
-                .foregroundStyle(tone)
+                .font(theme.typography.bodyStrong)
+                .foregroundStyle(tone ?? theme.colors.textPrimary)
         }
         .frame(minHeight: 28)
     }
@@ -72,6 +74,7 @@ public struct EDSValueRow: View {
 // MARK: - EDSInlineField
 
 public struct EDSInlineField<Content: View>: View {
+    @Environment(\.edsTheme) private var theme
     let label: LocalizedStringKey
     let content: Content
 
@@ -81,7 +84,7 @@ public struct EDSInlineField<Content: View>: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: EDSTheme.shared.spacing.xs) {
+        VStack(alignment: .leading, spacing: theme.spacing.xs) {
             EDSLabelText(label)
             content
         }

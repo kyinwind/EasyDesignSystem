@@ -17,11 +17,12 @@ import SwiftUI
 /// }
 /// ```
 public struct EDSPage<Content: View>: View {
+    @Environment(\.edsTheme) private var theme
     let title: LocalizedStringKey?
     let subtitle: LocalizedStringKey?
     let maxWidth: CGFloat?
-    let padding: CGFloat
-    let spacing: CGFloat
+    let padding: CGFloat?
+    let spacing: CGFloat?
     let showsBackground: Bool
     let scrolls: Bool
     let content: Content
@@ -30,8 +31,8 @@ public struct EDSPage<Content: View>: View {
         _ title: LocalizedStringKey? = nil,
         subtitle: LocalizedStringKey? = nil,
         maxWidth: CGFloat? = 880,
-        padding: CGFloat = EDSTheme.shared.spacing.xxl,
-        spacing: CGFloat = EDSTheme.shared.spacing.xl,
+        padding: CGFloat? = nil,
+        spacing: CGFloat? = nil,
         showsBackground: Bool = false,
         scrolls: Bool = true,
         @ViewBuilder content: () -> Content
@@ -57,7 +58,7 @@ public struct EDSPage<Content: View>: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(showsBackground ? EDSTheme.shared.colors.pageBackground : Color.clear)
+        .background(showsBackground ? theme.colors.pageBackground : Color.clear)
     }
 
     private var pageContent: some View {
@@ -78,19 +79,20 @@ public struct EDSPage<Content: View>: View {
 /// 当页面外部已经提供 `ScrollView`、`NavigationSplitView` 或自定义容器时，用它复用
 /// DesignSystem 的页面标题、最大宽度、padding 和 section 间距规则。
 public struct EDSPageStack<Content: View>: View {
+    @Environment(\.edsTheme) private var theme
     let title: LocalizedStringKey?
     let subtitle: LocalizedStringKey?
     let maxWidth: CGFloat?
-    let padding: CGFloat
-    let spacing: CGFloat
+    let padding: CGFloat?
+    let spacing: CGFloat?
     let content: Content
 
     public init(
         title: LocalizedStringKey? = nil,
         subtitle: LocalizedStringKey? = nil,
         maxWidth: CGFloat? = 880,
-        padding: CGFloat = EDSTheme.shared.spacing.xxl,
-        spacing: CGFloat = EDSTheme.shared.spacing.xl,
+        padding: CGFloat? = nil,
+        spacing: CGFloat? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
@@ -102,7 +104,7 @@ public struct EDSPageStack<Content: View>: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: spacing) {
+        VStack(alignment: .leading, spacing: spacing ?? theme.spacing.xl) {
             if let title {
                 EDSPageTitle(title, subtitle: subtitle)
             }
@@ -111,6 +113,6 @@ public struct EDSPageStack<Content: View>: View {
         }
         .frame(maxWidth: maxWidth, alignment: .leading)
         .frame(maxWidth: .infinity, alignment: .center)
-        .padding(padding)
+        .padding(padding ?? theme.spacing.xxl)
     }
 }

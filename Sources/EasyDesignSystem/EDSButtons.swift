@@ -4,21 +4,22 @@ import SwiftUI
 
 public struct EDSPrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.edsTheme) private var theme
     @State private var isHovered = false
 
     public init() {}
 
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(EDSTheme.shared.typography.bodyStrong)
+            .font(theme.typography.bodyStrong)
             .foregroundColor(.white)
-            .frame(height: EDSTheme.shared.controlSize.buttonHeight)
-            .padding(.horizontal, EDSTheme.shared.spacing.md)
+            .frame(height: theme.controlSize.buttonHeight)
+            .padding(.horizontal, theme.spacing.md)
             .background(
-                RoundedRectangle(cornerRadius: EDSTheme.shared.radius.md)
-                    .fill(EDSTheme.shared.colors.primary)
+                RoundedRectangle(cornerRadius: theme.radius.md)
+                    .fill(theme.colors.primary)
             )
-            .contentShape(RoundedRectangle(cornerRadius: EDSTheme.shared.radius.md))
+            .contentShape(RoundedRectangle(cornerRadius: theme.radius.md))
             .opacity(isEnabled ? (isHovered ? 0.85 : 1.0) : 0.5)
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: isHovered)
@@ -30,21 +31,22 @@ public struct EDSPrimaryButtonStyle: ButtonStyle {
 
 public struct EDSSecondaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.edsTheme) private var theme
     @State private var isHovered = false
 
     public init() {}
 
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(EDSTheme.shared.typography.bodyStrong)
-            .foregroundColor(EDSTheme.shared.colors.primary)
-            .frame(height: EDSTheme.shared.controlSize.buttonHeight)
-            .padding(.horizontal, EDSTheme.shared.spacing.md)
+            .font(theme.typography.bodyStrong)
+            .foregroundColor(theme.colors.primary)
+            .frame(height: theme.controlSize.buttonHeight)
+            .padding(.horizontal, theme.spacing.md)
             .background(
-                RoundedRectangle(cornerRadius: EDSTheme.shared.radius.md)
-                    .stroke(EDSTheme.shared.colors.primary, lineWidth: 1.5)
+                RoundedRectangle(cornerRadius: theme.radius.md)
+                    .stroke(theme.colors.primary, lineWidth: 1.5)
             )
-            .contentShape(RoundedRectangle(cornerRadius: EDSTheme.shared.radius.md))
+            .contentShape(RoundedRectangle(cornerRadius: theme.radius.md))
             .opacity(isEnabled ? (isHovered ? 0.85 : 1.0) : 0.5)
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: isHovered)
@@ -56,21 +58,22 @@ public struct EDSSecondaryButtonStyle: ButtonStyle {
 
 public struct EDSSoftButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.edsTheme) private var theme
     @State private var isHovered = false
 
     public init() {}
 
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(EDSTheme.shared.typography.bodyStrong)
-            .foregroundColor(EDSTheme.shared.colors.primary)
-            .frame(height: EDSTheme.shared.controlSize.buttonHeight)
-            .padding(.horizontal, EDSTheme.shared.spacing.md)
+            .font(theme.typography.bodyStrong)
+            .foregroundColor(theme.colors.primary)
+            .frame(height: theme.controlSize.buttonHeight)
+            .padding(.horizontal, theme.spacing.md)
             .background(
-                RoundedRectangle(cornerRadius: EDSTheme.shared.radius.md)
-                    .fill(EDSTheme.shared.colors.accentSoft)
+                RoundedRectangle(cornerRadius: theme.radius.md)
+                    .fill(theme.colors.accentSoft)
             )
-            .contentShape(RoundedRectangle(cornerRadius: EDSTheme.shared.radius.md))
+            .contentShape(RoundedRectangle(cornerRadius: theme.radius.md))
             .opacity(isEnabled ? (isHovered ? 0.85 : 1.0) : 0.5)
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: isHovered)
@@ -82,21 +85,22 @@ public struct EDSSoftButtonStyle: ButtonStyle {
 
 public struct EDSDangerButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.edsTheme) private var theme
     @State private var isHovered = false
 
     public init() {}
 
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(EDSTheme.shared.typography.bodyStrong)
+            .font(theme.typography.bodyStrong)
             .foregroundColor(.white)
-            .frame(height: EDSTheme.shared.controlSize.buttonHeight)
-            .padding(.horizontal, EDSTheme.shared.spacing.md)
+            .frame(height: theme.controlSize.buttonHeight)
+            .padding(.horizontal, theme.spacing.md)
             .background(
-                RoundedRectangle(cornerRadius: EDSTheme.shared.radius.md)
-                    .fill(EDSTheme.shared.colors.danger)
+                RoundedRectangle(cornerRadius: theme.radius.md)
+                    .fill(theme.colors.danger)
             )
-            .contentShape(RoundedRectangle(cornerRadius: EDSTheme.shared.radius.md))
+            .contentShape(RoundedRectangle(cornerRadius: theme.radius.md))
             .opacity(isEnabled ? (isHovered ? 0.85 : 1.0) : 0.5)
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: isHovered)
@@ -258,6 +262,7 @@ public enum EDSSidebarIconPresetTint {
 // MARK: - EDSBadge
 
 public struct EDSBadge: View {
+    @Environment(\.edsTheme) private var theme
     public enum Style {
         case neutral   // 中性：灰色
         case accent    // 主题色：跟随 primary
@@ -293,10 +298,10 @@ public struct EDSBadge: View {
 
     public var body: some View {
         badgeText
-            .font(EDSTheme.shared.typography.captionStrong)
+            .font(theme.typography.captionStrong)
             .foregroundColor(foregroundColor)
-            .padding(.horizontal, EDSTheme.shared.spacing.xs)
-            .padding(.vertical, EDSTheme.shared.spacing.xxs)
+            .padding(.horizontal, theme.spacing.xs)
+            .padding(.vertical, theme.spacing.xxs)
             .background(
                 Capsule()
                     .fill(backgroundColor)
@@ -316,11 +321,11 @@ public struct EDSBadge: View {
     /// 前景色（文字颜色）
     private var foregroundColor: Color {
         switch style {
-        case .neutral:  return EDSTheme.shared.colors.textSecondary
-        case .accent:   return EDSTheme.shared.colors.primary
-        case .success:  return EDSTheme.shared.colors.success
-        case .warning:  return EDSTheme.shared.colors.warning
-        case .danger:   return EDSTheme.shared.colors.danger
+        case .neutral:  return theme.colors.textSecondary
+        case .accent:   return theme.colors.primary
+        case .success:  return theme.colors.success
+        case .warning:  return theme.colors.warning
+        case .danger:   return theme.colors.danger
         }
     }
 
@@ -333,6 +338,7 @@ public struct EDSBadge: View {
 // MARK: - EDSToggle
 
 public struct EDSToggle: View {
+    @Environment(\.edsTheme) private var theme
     @Binding private var isOn: Bool
     private let label: LocalizedStringKey
 
@@ -347,14 +353,14 @@ public struct EDSToggle: View {
     }
 
     public var body: some View {
-        HStack(spacing: EDSTheme.shared.spacing.sm) {
+        HStack(spacing: theme.spacing.sm) {
             Text(label)
-                .font(EDSTheme.shared.typography.body)
-                .foregroundColor(EDSTheme.shared.colors.textPrimary)
+                .font(theme.typography.body)
+                .foregroundColor(theme.colors.textPrimary)
             Spacer()
             Toggle("", isOn: $isOn)
-                .toggleStyle(SwitchToggleStyle(tint: EDSTheme.shared.colors.primary))
+                .toggleStyle(SwitchToggleStyle(tint: theme.colors.primary))
         }
-        .padding(.vertical, EDSTheme.shared.spacing.sm)
+        .padding(.vertical, theme.spacing.sm)
     }
 }

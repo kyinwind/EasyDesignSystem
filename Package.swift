@@ -15,6 +15,10 @@ let package = Package(
             name: "EasyDesignSystem",
             targets: ["EasyDesignSystem"]
         ),
+        .library(
+            name: "EasyDesignSystemCatalog",
+            targets: ["EasyDesignSystemCatalog"]
+        ),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -24,6 +28,11 @@ let package = Package(
             resources: [
                 .process("Resources")
             ]
+        ),
+        .target(
+            name: "EasyDesignSystemCatalog",
+            dependencies: ["EasyDesignSystem"],
+            path: "Examples/Catalog"
         ),
         .testTarget(
             name: "EasyDesignSystemTests",

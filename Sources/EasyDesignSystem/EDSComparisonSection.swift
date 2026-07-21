@@ -2,6 +2,7 @@ import SwiftUI
 
 /// 标准的 Free / Pro 功能对比区域。
 public struct EDSComparisonSection: View {
+    @Environment(\.edsTheme) private var theme
     public let features: [(String, Bool, Bool)]
 
     public init(features: [(String, Bool, Bool)]) {
@@ -13,7 +14,7 @@ public struct EDSComparisonSection: View {
             EDSSectionTitle(title: localized("EDSComparisonSection.features.title"))
                 .padding(.vertical, 10)
         }) {
-            VStack(spacing: EDSTheme.shared.spacing.sm) {
+            VStack(spacing: theme.spacing.sm) {
                 HStack {
                     header("EDSComparisonSection.features.features", width: 55)
                     Spacer()
@@ -24,11 +25,11 @@ public struct EDSComparisonSection: View {
                 Divider()
 
                 ForEach(features.indices, id: \.self) { index in
-                    HStack(spacing: EDSTheme.shared.spacing.md) {
+                    HStack(spacing: theme.spacing.md) {
                         Text("\(index + 1).")
                         Text(features[index].0)
-                            .font(EDSTheme.shared.typography.body)
-                            .foregroundStyle(EDSTheme.shared.colors.textPrimary)
+                            .font(theme.typography.body)
+                            .foregroundStyle(theme.colors.textPrimary)
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         EDSIconMark(isOn: features[index].1)
@@ -43,8 +44,8 @@ public struct EDSComparisonSection: View {
 
     private func header(_ key: String, width: CGFloat) -> some View {
         Text(localized(key))
-            .font(EDSTheme.shared.typography.captionStrong)
-            .foregroundStyle(EDSTheme.shared.colors.textSecondary)
+            .font(theme.typography.captionStrong)
+            .foregroundStyle(theme.colors.textSecondary)
             .frame(width: width)
     }
 
@@ -54,6 +55,7 @@ public struct EDSComparisonSection: View {
 }
 
 public struct EDSIconMark: View {
+    @Environment(\.edsTheme) private var theme
     public let isOn: Bool
 
     public init(isOn: Bool) {
@@ -62,7 +64,7 @@ public struct EDSIconMark: View {
 
     public var body: some View {
         Image(systemName: isOn ? "checkmark.circle.fill" : "minus.circle")
-            .foregroundStyle(isOn ? EDSTheme.shared.colors.success : EDSTheme.shared.colors.textTertiary)
+            .foregroundStyle(isOn ? theme.colors.success : theme.colors.textTertiary)
             .font(.system(size: 18, weight: .semibold))
     }
 }

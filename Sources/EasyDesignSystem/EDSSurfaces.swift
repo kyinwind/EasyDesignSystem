@@ -83,6 +83,7 @@ public struct EDSSidebarMenuItem: Hashable, Identifiable {
 
 /// 侧边栏分组视图
 public struct EDSSidebarGroupView: View {
+    @Environment(\.edsTheme) private var theme
     let title: String?
     let items: [EDSSidebarMenuItem]
     @Binding var selection: String
@@ -94,17 +95,17 @@ public struct EDSSidebarGroupView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: EDSTheme.shared.spacing.xs) {
+        VStack(alignment: .leading, spacing: theme.spacing.xs) {
             // 分组标题
             if let title {
                 Text(title)
-                    .font(EDSTheme.shared.typography.captionStrong)
-                    .foregroundStyle(EDSTheme.shared.colors.textTertiary)
-                    .padding(.leading, EDSTheme.shared.spacing.sm)
+                    .font(theme.typography.captionStrong)
+                    .foregroundStyle(theme.colors.textTertiary)
+                    .padding(.leading, theme.spacing.sm)
             }
 
             // 分组内的菜单项
-            VStack(spacing: EDSTheme.shared.spacing.xxs) {
+            VStack(spacing: theme.spacing.xxs) {
                 ForEach(items) { item in
                     EDSSidebarItemButton(
                         item: item,
@@ -122,13 +123,14 @@ public struct EDSSidebarGroupView: View {
 
 /// 单个侧边栏菜单项按钮
 public struct EDSSidebarItemButton: View {
+    @Environment(\.edsTheme) private var theme
     let item: EDSSidebarMenuItem
     let isSelected: Bool
     let action: () -> Void
 
     public var body: some View {
         Button(action: action) {
-            HStack(spacing: EDSTheme.shared.spacing.sm) {
+            HStack(spacing: theme.spacing.sm) {
                 EDSSidebarIcon(
                     systemName: item.icon,
                     tint: item.tint,
@@ -136,20 +138,20 @@ public struct EDSSidebarItemButton: View {
                 )
 
                 Text(item.label)
-                    .font(EDSTheme.shared.typography.body15)
+                    .font(theme.typography.body15)
 
                 Spacer()
             }
-            .padding(.horizontal, EDSTheme.shared.spacing.sm)
-            .padding(.vertical, EDSTheme.shared.spacing.xs)
+            .padding(.horizontal, theme.spacing.sm)
+            .padding(.vertical, theme.spacing.xs)
             .background(
-                RoundedRectangle(cornerRadius: EDSTheme.shared.radius.sm, style: .continuous)
-                    .fill(isSelected ? EDSTheme.shared.colors.accentSoft : Color.clear)
+                RoundedRectangle(cornerRadius: theme.radius.sm, style: .continuous)
+                    .fill(isSelected ? theme.colors.accentSoft : Color.clear)
             )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(isSelected ? EDSTheme.shared.colors.accent : EDSTheme.shared.colors.textPrimary)
+        .foregroundStyle(isSelected ? theme.colors.accent : theme.colors.textPrimary)
     }
 }
 
@@ -158,27 +160,28 @@ public struct EDSSidebarItemButton: View {
 // MARK: EDSCard
 
 public struct EDSCard<Content: View>: View {
-    let padding: CGFloat
+    @Environment(\.edsTheme) private var theme
+    let padding: CGFloat?
     let backgroundStyle: AnyShapeStyle?
-    let cornerRadius: CGFloat
+    let cornerRadius: CGFloat?
     let content: Content
 
     /// 轻量容器。默认只提供 padding，不绘制背景。
     public init(
-        padding: CGFloat = EDSTheme.shared.spacing.lg,
+        padding: CGFloat? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.padding = padding
         self.backgroundStyle = nil
-        self.cornerRadius = EDSTheme.shared.radius.md
+        self.cornerRadius = nil
         self.content = content()
     }
 
     /// 带背景的卡片容器。只有显式传入 `background` 时才绘制背景和圆角。
     public init(
-        padding: CGFloat = EDSTheme.shared.spacing.lg,
+        padding: CGFloat? = nil,
         background: some ShapeStyle,
-        cornerRadius: CGFloat = EDSTheme.shared.radius.md,
+        cornerRadius: CGFloat? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.padding = padding
@@ -188,17 +191,14 @@ public struct EDSCard<Content: View>: View {
     }
 
     public var body: some View {
-        if let backgroundStyle {
-            content
-                .padding(padding)
-                .background(
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(backgroundStyle)
+        content
+            .padding(padding ?? theme.spacing.lg)
+            .edsSurface(
+                EDSSurfaceConfiguration(
+                    background: backgroundStyle,
+                    cornerRadius: cornerRadius ?? theme.radius.md
                 )
-        } else {
-            content
-                .padding(padding)
-        }
+            )
     }
 }
 
@@ -211,11 +211,13 @@ public enum EDSGroupStyle {
 }
 
 public struct EDSGroup<Content: View>: View {
+    @Environment(\.edsTheme) private var theme
     let title: LocalizedStringKey?
     let subtitle: LocalizedStringKey?
-    let padding: CGFloat
+    let padding: CGFloat?
     let backgroundStyle: AnyShapeStyle?
-    let cornerRadius: CGFloat
+    let style: EDSGroupStyle
+    let cornerRadius: CGFloat?
     let showsBorder: Bool
     let content: Content
 
@@ -223,9 +225,8 @@ public struct EDSGroup<Content: View>: View {
     public init(
         _ title: LocalizedStringKey? = nil,
         subtitle: LocalizedStringKey? = nil,
-        padding: CGFloat = EDSTheme.shared.spacing.lg,
-        background: some ShapeStyle = EDSTheme.shared.colors.cardGrayBackground,
-        cornerRadius: CGFloat = EDSTheme.shared.radius.md,
+        padding: CGFloat? = nil,
+        cornerRadius: CGFloat? = nil,
         style: EDSGroupStyle = .filled,
         showsBorder: Bool = false,
         @ViewBuilder content: () -> Content
@@ -233,14 +234,29 @@ public struct EDSGroup<Content: View>: View {
         self.title = title
         self.subtitle = subtitle
         self.padding = padding
-        switch style {
-        case .filled:
-            self.backgroundStyle = AnyShapeStyle(background)
-        case .subtle:
-            self.backgroundStyle = AnyShapeStyle(EDSTheme.shared.colors.subtleFill)
-        case .plain:
-            self.backgroundStyle = nil
-        }
+        self.backgroundStyle = nil
+        self.style = style
+        self.cornerRadius = cornerRadius
+        self.showsBorder = showsBorder
+        self.content = content()
+    }
+
+    /// 使用显式背景的内容分组。
+    public init(
+        _ title: LocalizedStringKey? = nil,
+        subtitle: LocalizedStringKey? = nil,
+        padding: CGFloat? = nil,
+        background: some ShapeStyle,
+        cornerRadius: CGFloat? = nil,
+        style: EDSGroupStyle = .filled,
+        showsBorder: Bool = false,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.padding = padding
+        self.backgroundStyle = AnyShapeStyle(background)
+        self.style = style
         self.cornerRadius = cornerRadius
         self.showsBorder = showsBorder
         self.content = content()
@@ -249,17 +265,17 @@ public struct EDSGroup<Content: View>: View {
     public var body: some View {
         groupBody
         .overlay(
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            RoundedRectangle(cornerRadius: cornerRadius ?? theme.radius.md, style: .continuous)
                 .stroke(
-                    showsBorder ? EDSTheme.shared.colors.border : Color.clear,
-                    lineWidth: EDSTheme.shared.stroke.hairline
+                    showsBorder ? theme.colors.border : Color.clear,
+                    lineWidth: theme.stroke.hairline
                 )
         )
     }
 
     @ViewBuilder
     private var groupBody: some View {
-        if let backgroundStyle {
+        if let backgroundStyle = resolvedBackgroundStyle {
             EDSCard(
                 padding: padding,
                 background: backgroundStyle,
@@ -274,8 +290,19 @@ public struct EDSGroup<Content: View>: View {
         }
     }
 
+    private var resolvedBackgroundStyle: AnyShapeStyle? {
+        switch style {
+        case .filled:
+            backgroundStyle ?? AnyShapeStyle(theme.colors.cardGrayBackground)
+        case .subtle:
+            AnyShapeStyle(theme.colors.subtleFill)
+        case .plain:
+            nil
+        }
+    }
+
     private var groupContent: some View {
-        VStack(alignment: .leading, spacing: EDSTheme.shared.spacing.md) {
+        VStack(alignment: .leading, spacing: theme.spacing.md) {
             if title != nil || subtitle != nil {
                 header
             }
@@ -287,17 +314,17 @@ public struct EDSGroup<Content: View>: View {
 
     @ViewBuilder
     private var header: some View {
-        VStack(alignment: .leading, spacing: EDSTheme.shared.spacing.xxs) {
+        VStack(alignment: .leading, spacing: theme.spacing.xxs) {
             if let title {
                 Text(title)
-                    .font(EDSTheme.shared.typography.bodyStrong)
-                    .foregroundStyle(EDSTheme.shared.colors.textPrimary)
+                    .font(theme.typography.bodyStrong)
+                    .foregroundStyle(theme.colors.textPrimary)
             }
 
             if let subtitle {
                 Text(subtitle)
-                    .font(EDSTheme.shared.typography.caption)
-                    .foregroundStyle(EDSTheme.shared.colors.textSecondary)
+                    .font(theme.typography.caption)
+                    .foregroundStyle(theme.colors.textSecondary)
             }
         }
     }
@@ -306,6 +333,7 @@ public struct EDSGroup<Content: View>: View {
 // MARK: EDSPageSection
 
 public struct EDSPageSection<Content: View>: View {
+    @Environment(\.edsTheme) private var theme
     let title: LocalizedStringKey
     let subtitle: LocalizedStringKey?
     let showsDivider: Bool?
@@ -326,23 +354,23 @@ public struct EDSPageSection<Content: View>: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // 标题区域 - 无背景，直接显示在页面上
-            VStack(alignment: .leading, spacing: EDSTheme.shared.spacing.xxs) {
+            VStack(alignment: .leading, spacing: theme.spacing.xxs) {
                 Text(title)
-                    .font(EDSTheme.shared.typography.sectionTitle)
-                    .foregroundStyle(EDSTheme.shared.colors.textPrimary)
+                    .font(theme.typography.sectionTitle)
+                    .foregroundStyle(theme.colors.textPrimary)
 
                 if let subtitle {
                     Text(subtitle)
-                        .font(EDSTheme.shared.typography.caption)
-                        .foregroundStyle(EDSTheme.shared.colors.textSecondary)
+                        .font(theme.typography.caption)
+                        .foregroundStyle(theme.colors.textSecondary)
                 }
             }
-            .padding(.bottom, EDSTheme.shared.spacing.md)
+            .padding(.bottom, theme.spacing.md)
 
             // 分隔线
             if let show = showsDivider, show {
                 Divider()
-                    .padding(.bottom, EDSTheme.shared.spacing.md)
+                    .padding(.bottom, theme.spacing.md)
             }
 
             content
@@ -354,6 +382,7 @@ public struct EDSPageSection<Content: View>: View {
 
 /// Hero 面板，根据 EDSTheme.shared.heroGradient 渲染渐变背景
 public struct EDSHeroPanel<Content: View>: View {
+    @Environment(\.edsTheme) private var theme
     let content: Content
 
     public init(@ViewBuilder content: () -> Content) {
@@ -362,15 +391,15 @@ public struct EDSHeroPanel<Content: View>: View {
 
     public var body: some View {
         content
-            .padding(EDSTheme.shared.spacing.xxl)
+            .padding(theme.spacing.xxl)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(EDSTheme.shared.heroGradient.gradient)
-            .clipShape(RoundedRectangle(cornerRadius: EDSTheme.shared.radius.xl, style: .continuous))
+            .background(theme.heroGradient.gradient)
+            .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl, style: .continuous))
             .shadow(
-                color: EDSTheme.shared.shadow.shadowColor,
-                radius: EDSTheme.shared.shadow.radius,
-                x: EDSTheme.shared.shadow.x,
-                y: EDSTheme.shared.shadow.y
+                color: theme.shadow.shadowColor,
+                radius: theme.shadow.radius,
+                x: theme.shadow.x,
+                y: theme.shadow.y
             )
     }
 }
@@ -379,6 +408,7 @@ public struct EDSHeroPanel<Content: View>: View {
 
 /// 多行 Subtitle 行组件（避免 SKBaseRow 的 lineLimit 限制）
 public struct EDSMultilineSubtitleRow<Content: View>: View {
+    @Environment(\.edsTheme) private var theme
     var systemIcon: String? = nil
     var iconImage: NSImage? = nil
     var iconColor: Color? = nil
@@ -408,14 +438,14 @@ public struct EDSMultilineSubtitleRow<Content: View>: View {
             VStack(alignment: .leading, spacing: 2) {
                 if let title = title {
                     Text(title)
-                        .font(EDSTheme.shared.typography.body)
+                        .font(theme.typography.body)
                         .foregroundStyle(.primary)
                         //.frame(minWidth: 50)
                 }
 
                 if let subtitle = subtitle {
                     Text(subtitle)
-                        .font(EDSTheme.shared.typography.caption)
+                        .font(theme.typography.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(nil)  // 允许多行，不限制
                         .fixedSize(horizontal: false, vertical: true)
@@ -452,6 +482,7 @@ public struct EDSMultilineSubtitleRow<Content: View>: View {
 // MARK: - EDSCollapsibleSection
 
 public struct EDSCollapsibleSection<Content: View>: View {
+    @Environment(\.edsTheme) private var theme
     var title: String? = nil
     @State private var isExpanded = false
     @ViewBuilder let content: () -> Content
@@ -472,7 +503,7 @@ public struct EDSCollapsibleSection<Content: View>: View {
                 HStack {
                     if let title = title {
                         Text(title)
-                            .font(EDSTheme.shared.typography.sectionTitle)
+                            .font(theme.typography.sectionTitle)
                             .foregroundColor(.primary)
                     }
                     Spacer()
@@ -500,6 +531,6 @@ public struct EDSCollapsibleSection<Content: View>: View {
             }
         }
         .background(Color(.controlBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: EDSTheme.shared.radius.md))
+        .clipShape(RoundedRectangle(cornerRadius: theme.radius.md))
     }
 }

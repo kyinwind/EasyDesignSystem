@@ -26,6 +26,7 @@ import SwiftUI
 
 /// 页面的大标题（用于页面顶部的标题区域）
 public struct EDSPageTitle: View {
+    @Environment(\.edsTheme) private var theme
     let title: LocalizedStringKey
     let subtitle: LocalizedStringKey?
 
@@ -35,15 +36,15 @@ public struct EDSPageTitle: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: EDSTheme.shared.spacing.xs) {
+        VStack(alignment: .leading, spacing: theme.spacing.xs) {
             Text(title)
-                .font(EDSTheme.shared.typography.pageTitle)
-                .foregroundStyle(EDSTheme.shared.colors.textPrimary)
+                .font(theme.typography.pageTitle)
+                .foregroundStyle(theme.colors.textPrimary)
 
             if let subtitle {
                 Text(subtitle)
-                    .font(EDSTheme.shared.typography.body)
-                    .foregroundStyle(EDSTheme.shared.colors.textSecondary)
+                    .font(theme.typography.body)
+                    .foregroundStyle(theme.colors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -54,6 +55,7 @@ public struct EDSPageTitle: View {
 
 /// 章节标题（用于页面内每个区块的标题）
 public struct EDSSectionTitle: View {
+    @Environment(\.edsTheme) private var theme
     let titleText: Text
     let subtitleText: Text?
 
@@ -76,15 +78,15 @@ public struct EDSSectionTitle: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: EDSTheme.shared.spacing.xxs) {
+        VStack(alignment: .leading, spacing: theme.spacing.xxs) {
             titleText
-                .font(EDSTheme.shared.typography.sectionTitle)
-                .foregroundStyle(EDSTheme.shared.colors.textPrimary)
+                .font(theme.typography.sectionTitle)
+                .foregroundStyle(theme.colors.textPrimary)
 
             if let subtitleText {
                 subtitleText
-                    .font(EDSTheme.shared.typography.caption)
-                    .foregroundStyle(EDSTheme.shared.colors.textSecondary)
+                    .font(theme.typography.caption)
+                    .foregroundStyle(theme.colors.textSecondary)
                     .lineLimit(3)
                     .truncationMode(.tail)
                     .multilineTextAlignment(.leading)
@@ -98,6 +100,7 @@ public struct EDSSectionTitle: View {
 
 /// 表单标签文字（次要层级，用于 label）
 public struct EDSLabelText: View {
+    @Environment(\.edsTheme) private var theme
     let text: LocalizedStringKey
 
     public init(_ text: LocalizedStringKey) {
@@ -106,8 +109,8 @@ public struct EDSLabelText: View {
 
     public var body: some View {
         Text(text)
-            .font(EDSTheme.shared.typography.captionStrong)
-            .foregroundStyle(EDSTheme.shared.colors.textSecondary)
+            .font(theme.typography.captionStrong)
+            .foregroundStyle(theme.colors.textSecondary)
             .textCase(nil)
     }
 }
@@ -116,6 +119,7 @@ public struct EDSLabelText: View {
 
 /// 说明文字（最次要层级，用于 caption）
 public struct EDSCaptionText: View {
+    @Environment(\.edsTheme) private var theme
     let text: LocalizedStringKey
 
     public init(_ text: LocalizedStringKey) {
@@ -124,8 +128,8 @@ public struct EDSCaptionText: View {
 
     public var body: some View {
         Text(text)
-            .font(EDSTheme.shared.typography.caption)
-            .foregroundStyle(EDSTheme.shared.colors.textSecondary)
+            .font(theme.typography.caption)
+            .foregroundStyle(theme.colors.textSecondary)
     }
 }
 
@@ -133,6 +137,7 @@ public struct EDSCaptionText: View {
 
 /// 等宽文字（用于路径、代码等）
 public struct EDSMonoText: View {
+    @Environment(\.edsTheme) private var theme
     let text: String
 
     public init(_ text: String) {
@@ -141,8 +146,8 @@ public struct EDSMonoText: View {
 
     public var body: some View {
         Text(text)
-            .font(EDSTheme.shared.typography.monoCaption)
-            .foregroundStyle(EDSTheme.shared.colors.textSecondary)
+            .font(theme.typography.monoCaption)
+            .foregroundStyle(theme.colors.textSecondary)
             .lineLimit(1)
             .truncationMode(.middle)
     }

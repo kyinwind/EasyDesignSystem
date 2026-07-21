@@ -3,6 +3,7 @@ import SwiftUI
 // MARK: - State Patterns
 
 public struct EDSEmptyState: View {
+    @Environment(\.edsTheme) private var theme
     let systemImage: String
     let title: LocalizedStringKey
     let message: LocalizedStringKey?
@@ -29,7 +30,7 @@ public struct EDSEmptyState: View {
     public var body: some View {
         EDSStateContent(
             systemImage: systemImage,
-            iconColor: EDSTheme.shared.colors.textTertiary,
+            iconColor: theme.colors.textTertiary,
             title: title,
             message: message,
             actionTitle: actionTitle,
@@ -41,6 +42,7 @@ public struct EDSEmptyState: View {
 }
 
 public struct EDSErrorState: View {
+    @Environment(\.edsTheme) private var theme
     let systemImage: String
     let title: LocalizedStringKey
     let message: LocalizedStringKey?
@@ -67,7 +69,7 @@ public struct EDSErrorState: View {
     public var body: some View {
         EDSStateContent(
             systemImage: systemImage,
-            iconColor: EDSTheme.shared.colors.danger,
+            iconColor: theme.colors.danger,
             title: title,
             message: message,
             actionTitle: actionTitle,
@@ -79,6 +81,7 @@ public struct EDSErrorState: View {
 }
 
 public struct EDSLoadingState: View {
+    @Environment(\.edsTheme) private var theme
     let title: LocalizedStringKey
     let message: LocalizedStringKey?
 
@@ -91,30 +94,31 @@ public struct EDSLoadingState: View {
     }
 
     public var body: some View {
-        VStack(spacing: EDSTheme.shared.spacing.md) {
+        VStack(spacing: theme.spacing.md) {
             ProgressView()
                 .controlSize(.regular)
 
-            VStack(spacing: EDSTheme.shared.spacing.xs) {
+            VStack(spacing: theme.spacing.xs) {
                 Text(title)
-                    .font(EDSTheme.shared.typography.bodyStrong)
-                    .foregroundStyle(EDSTheme.shared.colors.textPrimary)
+                    .font(theme.typography.bodyStrong)
+                    .foregroundStyle(theme.colors.textPrimary)
 
                 if let message {
                     Text(message)
-                        .font(EDSTheme.shared.typography.caption)
-                        .foregroundStyle(EDSTheme.shared.colors.textSecondary)
+                        .font(theme.typography.caption)
+                        .foregroundStyle(theme.colors.textSecondary)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(EDSTheme.shared.spacing.xxl)
+        .padding(theme.spacing.xxl)
     }
 }
 
 public struct EDSProgressPanel: View {
+    @Environment(\.edsTheme) private var theme
     let title: LocalizedStringKey
     let subtitle: LocalizedStringKey?
     let fractionCompleted: Double
@@ -146,22 +150,22 @@ public struct EDSProgressPanel: View {
 
     public var body: some View {
         EDSGroup {
-            HStack(alignment: .top, spacing: EDSTheme.shared.spacing.md) {
+            HStack(alignment: .top, spacing: theme.spacing.md) {
                 EDSSidebarIcon(
                     systemName: systemImage,
-                    tint: EDSTheme.shared.colors.primary,
+                    tint: theme.colors.primary,
                     size: .medium
                 )
 
-                VStack(alignment: .leading, spacing: EDSTheme.shared.spacing.sm) {
+                VStack(alignment: .leading, spacing: theme.spacing.sm) {
                     header
                     ProgressView(value: clampedFraction)
                         .progressViewStyle(.linear)
 
                     if let statusText {
                         Text(statusText)
-                            .font(EDSTheme.shared.typography.caption)
-                            .foregroundStyle(EDSTheme.shared.colors.textSecondary)
+                            .font(theme.typography.caption)
+                            .foregroundStyle(theme.colors.textSecondary)
                     }
                 }
             }
@@ -169,22 +173,22 @@ public struct EDSProgressPanel: View {
     }
 
     private var header: some View {
-        HStack(alignment: .firstTextBaseline, spacing: EDSTheme.shared.spacing.md) {
-            VStack(alignment: .leading, spacing: EDSTheme.shared.spacing.xxs) {
+        HStack(alignment: .firstTextBaseline, spacing: theme.spacing.md) {
+            VStack(alignment: .leading, spacing: theme.spacing.xxs) {
                 Text(title)
-                    .font(EDSTheme.shared.typography.bodyStrong)
-                    .foregroundStyle(EDSTheme.shared.colors.textPrimary)
+                    .font(theme.typography.bodyStrong)
+                    .foregroundStyle(theme.colors.textPrimary)
 
                 if let subtitle {
                     Text(subtitle)
-                        .font(EDSTheme.shared.typography.caption)
-                        .foregroundStyle(EDSTheme.shared.colors.textSecondary)
+                        .font(theme.typography.caption)
+                        .foregroundStyle(theme.colors.textSecondary)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
 
-            Spacer(minLength: EDSTheme.shared.spacing.md)
+            Spacer(minLength: theme.spacing.md)
 
             if let actionTitle, let action {
                 EDSButton(actionTitle, role: .soft, systemImage: actionSystemImage, action: action)
@@ -198,6 +202,7 @@ public struct EDSProgressPanel: View {
 }
 
 private struct EDSStateContent: View {
+    @Environment(\.edsTheme) private var theme
     let systemImage: String
     let iconColor: Color
     let title: LocalizedStringKey
@@ -208,7 +213,7 @@ private struct EDSStateContent: View {
     let action: (() -> Void)?
 
     var body: some View {
-        VStack(spacing: EDSTheme.shared.spacing.lg) {
+        VStack(spacing: theme.spacing.lg) {
             Image(systemName: systemImage)
                 .font(.system(size: 34, weight: .semibold))
                 .foregroundStyle(iconColor)
@@ -218,15 +223,15 @@ private struct EDSStateContent: View {
                         .fill(iconColor.opacity(0.12))
                 )
 
-            VStack(spacing: EDSTheme.shared.spacing.xs) {
+            VStack(spacing: theme.spacing.xs) {
                 Text(title)
-                    .font(EDSTheme.shared.typography.sectionTitle)
-                    .foregroundStyle(EDSTheme.shared.colors.textPrimary)
+                    .font(theme.typography.sectionTitle)
+                    .foregroundStyle(theme.colors.textPrimary)
 
                 if let message {
                     Text(message)
-                        .font(EDSTheme.shared.typography.caption)
-                        .foregroundStyle(EDSTheme.shared.colors.textSecondary)
+                        .font(theme.typography.caption)
+                        .foregroundStyle(theme.colors.textSecondary)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -237,6 +242,6 @@ private struct EDSStateContent: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(EDSTheme.shared.spacing.xxl)
+        .padding(theme.spacing.xxl)
     }
 }
