@@ -7,7 +7,7 @@ EasyDesignSystem 是一套面向 macOS SwiftUI 应用的设计系统。它希望
 - SwiftUI
 - API 前缀：`EDS`
 
-## 设计理念
+## 1. 设计理念
 
 ### 调用方描述“这是什么”
 
@@ -51,7 +51,7 @@ EDSButton("删除", role: .danger) {
 }
 ```
 
-## 安装
+## 2. 安装
 
 在 Xcode 中选择 **File > Add Package Dependencies**，输入：
 
@@ -76,7 +76,134 @@ dependencies: [
 import EasyDesignSystem
 ```
 
-## Easy API
+## 3. 使用向导
+
+如果你只想快速开始，完成下面两个步骤就可以使用 EasyDesignSystem。后续章节都是更详细的规则、定制能力和组件参考，可以需要时再阅读。
+
+### 步骤一：在 App 初始化时配置主题
+
+首先导入 EasyDesignSystem，然后在 App 的 `init` 中完成一次全局配置：
+
+```swift
+import SwiftUI
+import EasyDesignSystem
+
+@main
+struct MyApp: App {
+    init() {
+        EDSTheme.shared.configure { tokens in
+            tokens.colors.primary = .blue
+            tokens.colors.accent = .blue
+        }
+    }
+
+    var body: some Scene {
+        WindowGroup {
+            SettingsView()
+        }
+    }
+}
+```
+
+如果不想手动配置 Token，也可以直接选择预设主题：
+
+```swift
+init() {
+    EDSTheme.shared.applyPreset(.orange)
+}
+```
+
+配置应在 App 启动时完成。V1 暂不需要为运行时动态换肤准备额外状态。
+
+### 步骤二：用 Easy API 编写页面
+
+编写页面时，只需要记住这个常用层级：
+
+```text
+Page
+└── Section
+    ├── Group
+    │   └── Row / Toggle / Button
+    └── Card
+        └── 业务内容
+```
+
+- Page 是页面根内容，使用 `.easyDesign()`。
+- Section 是页面中的一个信息区块，使用 `.easyDesign(.section)`。
+- Group 把同一功能的内容组织在一起，使用 `.easyDesign(.group)`。
+- Card 用于需要独立视觉层级的内容，使用 `.easyDesign(.card)`。
+
+下面是一个可直接参考的完整设置页：
+
+```swift
+import SwiftUI
+import EasyDesignSystem
+
+struct SettingsView: View {
+    @State private var automaticUpdates = true
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading) {
+                EDSPageTitle("设置", subtitle: "管理应用偏好")
+
+                VStack(alignment: .leading) {
+                    EDSSectionTitle("通用")
+
+                    VStack(alignment: .leading) {
+                        EDSSettingRow(
+                            "自动更新",
+                            subtitle: "定期检查是否有新版本。"
+                        ) {
+                            EDSToggle(
+                                isOn: $automaticUpdates,
+                                label: "启用"
+                            )
+                        }
+                    }
+                    .easyDesign(.group)
+
+                    VStack(alignment: .leading) {
+                        EDSSectionTitle(
+                            "专业版",
+                            subtitle: "解锁更多高级功能。"
+                        )
+
+                        HStack {
+                            EDSBadge("推荐", style: .accent)
+                            Spacer()
+                            EDSButton("立即升级", role: .primary) {
+                                purchase()
+                            }
+                        }
+                    }
+                    .easyDesign(.card)
+                }
+                .easyDesign(.section)
+            }
+            .easyDesign()
+        }
+    }
+
+    private func purchase() {
+        // 执行业务操作
+    }
+}
+```
+
+这个页面中：
+
+- `.easyDesign()` 自动应用页面 padding、居中的最大宽度、主题前景色和 tint。
+- `.section` 建立页面区块的垂直节奏。
+- `.group` 自动应用轻量语义背景、padding 和圆角。
+- `.card` 自动应用卡片背景、padding、圆角、边框和阴影。
+- `EDSButton(role:)` 和 `EDSBadge(style:)` 仍由业务代码指定“主要操作”或“强调状态”等语义。
+
+> Easy API 不会自动添加 `ScrollView`、导航和页面标题，因为这些属于页面结构，应由调用方决定。
+
+到这里就已经完成了 EasyDesignSystem 的基本接入。需要更多场景、局部覆盖、主题或精细组件时，再继续阅读后面的章节。
+
+## 4. Easy API
 
 ### 最小用法
 
@@ -214,7 +341,7 @@ VStack {
 
 系统不会猜测或去重调用方的语义。常规页面保持 Page -> Section -> Group/Card 两到四层即可。
 
-## 主题
+## 5. 主题
 
 ### 全局主题
 
@@ -302,7 +429,7 @@ EDSTheme.shared.colors.primary
 
 V1 要求在 App 启动阶段配置全局主题，暂不承诺运行时修改 `EDSTheme.shared` 后自动刷新已显示的视图。
 
-## 精细 API
+## 6. 精细 API
 
 当页面需要完整骨架、特殊布局或具体参数时，使用精细 API。
 
@@ -482,7 +609,7 @@ let data = try EDSTheme.shared.exportJSON()
 let json = try EDSTheme.shared.exportJSONString()
 ```
 
-## Catalog 与 Preview
+## 7. Catalog 与 Preview
 
 Package 提供 `EasyDesignSystemCatalog` library target，用于在 Xcode Canvas 中预览设计系统。三个预览界面的职责不同：
 
@@ -525,7 +652,7 @@ Package 提供 `EasyDesignSystemCatalog` library target，用于在 Xcode Canvas
 
 建议在 macOS 浅色和深色外观下都检查 Gallery，特别关注 Page 的背景继承、Group/Card 的层级以及局部主题作用域。
 
-## 开发与验证
+## 8. 开发与验证
 
 ```bash
 swift build
@@ -534,6 +661,6 @@ swift test
 
 如果本机同时安装了 Command Line Tools 和 Xcode，请确保使用与当前 macOS SDK 匹配的 Swift 工具链。
 
-## License
+## 9. License
 
 See [`LICENSE`](LICENSE).
