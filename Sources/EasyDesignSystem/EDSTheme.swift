@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 
 // MARK: - EDSThemeBuilder：用于闭包配置的 builder
@@ -44,8 +45,24 @@ public final class EDSTheme: @unchecked Sendable {
     /// 全局单例。建议在 App 启动阶段完成配置，运行时动态切换主题暂不承诺自动刷新 UI。
     public static let shared = EDSTheme()
 
-    /// 当前生效的设计 Token
-    public var tokens: EDSDesignTokens = EDSDesignTokens()
+    private let tokensLock = NSLock()
+    private var storedTokens = EDSDesignTokens()
+
+    /// 当前生效的设计 Token。
+    ///
+    /// 保留原有可读写 API；内部以值拷贝和锁保护，避免主题导出、环境读取与启动期配置产生数据竞争。
+    public var tokens: EDSDesignTokens {
+        get {
+            tokensLock.lock()
+            defer { tokensLock.unlock() }
+            return storedTokens
+        }
+        set {
+            tokensLock.lock()
+            storedTokens = newValue
+            tokensLock.unlock()
+        }
+    }
 
     private init() {}
 
@@ -61,7 +78,9 @@ public final class EDSTheme: @unchecked Sendable {
     /// ```
     @MainActor
     public func configure(_ block: (inout EDSDesignTokens) -> Void) {
-        block(&tokens)
+        var updatedTokens = tokens
+        block(&updatedTokens)
+        tokens = updatedTokens
     }
 
     /// 通过 JSON Data 配置 Token
@@ -146,6 +165,9 @@ public final class EDSTheme: @unchecked Sendable {
 
     /// 控件尺寸 Token 快捷访问
     public var controlSize: EDSControlSizeTokens { tokens.controlSize }
+
+    /// 自适应布局 Token 快捷访问
+    public var adaptiveLayout: EDSAdaptiveLayoutTokens { tokens.adaptiveLayout }
 
     /// Hero 渐变 Token 快捷访问
     public var heroGradient: EDSHeroGradient { tokens.heroGradient }

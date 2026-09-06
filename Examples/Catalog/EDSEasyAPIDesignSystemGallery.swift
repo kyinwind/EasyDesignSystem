@@ -12,6 +12,7 @@ public struct EDSEasyAPIDesignSystemGallery: View {
     public init() {}
 
     public var body: some View {
+        #if os(macOS)
         HSplitView {
             sidebar
                 .frame(minWidth: 220, idealWidth: 240, maxWidth: 280)
@@ -20,6 +21,14 @@ public struct EDSEasyAPIDesignSystemGallery: View {
                 .frame(minWidth: 600)
         }
         .frame(minWidth: 920, minHeight: 680)
+        #else
+        NavigationSplitView {
+            sidebar
+                .navigationTitle("Easy API")
+        } detail: {
+            selectedContent
+        }
+        #endif
     }
 
     private var sidebar: some View {

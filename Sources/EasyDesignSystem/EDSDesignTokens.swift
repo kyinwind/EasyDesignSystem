@@ -1,7 +1,4 @@
 import SwiftUI
-#if canImport(AppKit)
-import AppKit
-#endif
 
 private extension KeyedDecodingContainer {
     func decodeValue<T: Decodable>(
@@ -76,24 +73,7 @@ extension Color {
 
     /// 将 Color 转换为 hex 字符串（保留到 RGB）
     public func toHex() -> String {
-        #if canImport(AppKit)
-        guard let color = NSColor(self).usingColorSpace(.sRGB) else {
-            return "#000000"
-        }
-
-        let r = Int((color.redComponent * 255).rounded()).clamped(to: 0...255)
-        let g = Int((color.greenComponent * 255).rounded()).clamped(to: 0...255)
-        let b = Int((color.blueComponent * 255).rounded()).clamped(to: 0...255)
-        return String(format: "#%02X%02X%02X", r, g, b)
-        #else
-        return "#000000"
-        #endif
-    }
-}
-
-private extension Comparable {
-    func clamped(to range: ClosedRange<Self>) -> Self {
-        min(max(self, range.lowerBound), range.upperBound)
+        EDSPlatformColorBridge.hexString(for: self) ?? "#000000"
     }
 }
 
@@ -437,6 +417,59 @@ public struct EDSControlSizeTokens: Codable, Equatable, Sendable {
     }
 }
 
+// MARK: - EDSAdaptiveLayoutTokens
+
+/// Cross-platform layout values resolved from the current size class and
+/// interaction profile. Existing visual control sizes remain in
+/// `EDSControlSizeTokens`.
+public struct EDSAdaptiveLayoutTokens: Codable, Equatable, Sendable {
+    public var compactPagePadding: CGFloat = 16
+    public var regularPagePadding: CGFloat = 32
+    public var readableContentMaxWidth: CGFloat = 880
+    public var minimumTouchTarget: CGFloat = 44
+    public var minimumHybridTarget: CGFloat = 44
+
+    public init() {}
+
+    private enum CodingKeys: String, CodingKey {
+        case compactPagePadding
+        case regularPagePadding
+        case readableContentMaxWidth
+        case minimumTouchTarget
+        case minimumHybridTarget
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let defaults = EDSAdaptiveLayoutTokens()
+        compactPagePadding = try container.decodeValue(
+            CGFloat.self,
+            forKey: .compactPagePadding,
+            default: defaults.compactPagePadding
+        )
+        regularPagePadding = try container.decodeValue(
+            CGFloat.self,
+            forKey: .regularPagePadding,
+            default: defaults.regularPagePadding
+        )
+        readableContentMaxWidth = try container.decodeValue(
+            CGFloat.self,
+            forKey: .readableContentMaxWidth,
+            default: defaults.readableContentMaxWidth
+        )
+        minimumTouchTarget = try container.decodeValue(
+            CGFloat.self,
+            forKey: .minimumTouchTarget,
+            default: defaults.minimumTouchTarget
+        )
+        minimumHybridTarget = try container.decodeValue(
+            CGFloat.self,
+            forKey: .minimumHybridTarget,
+            default: defaults.minimumHybridTarget
+        )
+    }
+}
+
 
 // MARK: - EDSHeroGradient
 
@@ -487,6 +520,7 @@ public struct EDSDesignTokens: Codable, Equatable, Sendable {
     public var radius: EDSRadiusTokens = EDSRadiusTokens()
     public var typography: EDSTypographyTokens = EDSTypographyTokens()
     public var controlSize: EDSControlSizeTokens = EDSControlSizeTokens()
+    public var adaptiveLayout: EDSAdaptiveLayoutTokens = EDSAdaptiveLayoutTokens()
     public var heroGradient: EDSHeroGradient = EDSHeroGradient()
     public var stroke: EDSStrokeTokens = EDSStrokeTokens()
     public var shadow: EDSShadowTokens = EDSShadowTokens()
@@ -494,7 +528,7 @@ public struct EDSDesignTokens: Codable, Equatable, Sendable {
     public init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case colors, spacing, radius, typography, controlSize, heroGradient, stroke, shadow
+        case colors, spacing, radius, typography, controlSize, adaptiveLayout, heroGradient, stroke, shadow
     }
 
     public init(from decoder: Decoder) throws {
@@ -504,6 +538,11 @@ public struct EDSDesignTokens: Codable, Equatable, Sendable {
         radius = try container.decodeValue(EDSRadiusTokens.self, forKey: .radius, default: EDSRadiusTokens())
         typography = try container.decodeValue(EDSTypographyTokens.self, forKey: .typography, default: EDSTypographyTokens())
         controlSize = try container.decodeValue(EDSControlSizeTokens.self, forKey: .controlSize, default: EDSControlSizeTokens())
+        adaptiveLayout = try container.decodeValue(
+            EDSAdaptiveLayoutTokens.self,
+            forKey: .adaptiveLayout,
+            default: EDSAdaptiveLayoutTokens()
+        )
         heroGradient = try container.decodeValue(EDSHeroGradient.self, forKey: .heroGradient, default: EDSHeroGradient())
         stroke = try container.decodeValue(EDSStrokeTokens.self, forKey: .stroke, default: EDSStrokeTokens())
         shadow = try container.decodeValue(EDSShadowTokens.self, forKey: .shadow, default: EDSShadowTokens())

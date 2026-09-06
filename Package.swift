@@ -7,6 +7,7 @@ let package = Package(
     name: "EasyDesignSystem",
     defaultLocalization: "en",
     platforms: [
+        .iOS(.v17),
         .macOS(.v14)
     ],
     products: [
@@ -36,7 +37,10 @@ let package = Package(
         ),
         .testTarget(
             name: "EasyDesignSystemTests",
-            dependencies: ["EasyDesignSystem"]
+            dependencies: ["EasyDesignSystem"],
+            resources: [
+                .process("Fixtures")
+            ]
         ),
     ],
     swiftLanguageModes: [.v6]

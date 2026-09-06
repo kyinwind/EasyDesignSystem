@@ -49,6 +49,13 @@
     "fieldHeight": 34,
     "rowMinHeight": 52
   },
+  "adaptiveLayout": {
+    "compactPagePadding": 16,
+    "regularPagePadding": 32,
+    "readableContentMaxWidth": 880,
+    "minimumTouchTarget": 44,
+    "minimumHybridTarget": 44
+  },
   "heroGradient": {
     "startColor": "#3185FF",
     "endColor": "#0A6BFF"

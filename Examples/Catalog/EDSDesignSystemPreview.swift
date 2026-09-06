@@ -1,7 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import EasyDesignSystem
-#if canImport(AppKit)
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
 import AppKit
 #endif
 
@@ -9,6 +9,7 @@ import AppKit
 // MARK: - EDSSystemColorWell：封装 NSColorWell，弹出系统颜色面板
 
 /// 点击颜色块时打开 macOS 系统 NSColorPanel，选择后自动回调
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
 @MainActor
 private struct EDSSystemColorWell: NSViewRepresentable {
     @Binding var color: Color
@@ -57,6 +58,17 @@ extension NSColor {
         return String(format: "#%02X%02X%02X", r, g, b)
     }
 }
+#else
+@MainActor
+private struct EDSSystemColorWell: View {
+    @Binding var color: Color
+
+    var body: some View {
+        ColorPicker("", selection: $color, supportsOpacity: false)
+            .labelsHidden()
+    }
+}
+#endif
 
 // MARK: - EDSDesignSystemPreview
 
@@ -85,6 +97,8 @@ public struct EDSDesignSystemPreview: View {
     public init() {}
 
     public var body: some View {
+        Group {
+        #if os(macOS)
         HSplitView {
             // ── 左侧：实时预览区 ──────────────────────────────
             previewPanel
@@ -95,6 +109,20 @@ public struct EDSDesignSystemPreview: View {
                 .frame(minWidth: 320)
         }
         .frame(minWidth: 800, minHeight: 600)
+        #else
+        TabView {
+            previewPanel
+                .tabItem {
+                    Label("预览", systemImage: "rectangle.on.rectangle")
+                }
+
+            editorPanel
+                .tabItem {
+                    Label("主题", systemImage: "slider.horizontal.3")
+                }
+        }
+        #endif
+        }
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 presetPicker
@@ -236,7 +264,7 @@ public struct EDSDesignSystemPreview: View {
             }
             .padding(EDSTheme.shared.spacing.lg)
         }
-        .background(Color(.textBackgroundColor))
+        .background(EDSTheme.shared.colors.pageBackground)
     }
 
     private func previewSection(_ title: String, @ViewBuilder content: () -> some View) -> some View {
@@ -261,7 +289,7 @@ public struct EDSDesignSystemPreview: View {
             }
             .padding(EDSTheme.shared.spacing.md)
         }
-        .background(Color(.controlBackgroundColor))
+        .background(EDSTheme.shared.colors.cardBackground)
     }
 
     // MARK: - 颜色编辑器
@@ -532,7 +560,7 @@ public struct EDSDesignSystemPreview: View {
                 .onTapGesture { previewSelection = "settings" }
         }
         .padding(draftSpacing.sm)
-        .background(Color(.windowBackgroundColor))
+        .background(EDSTheme.shared.colors.pageBackground)
         .clipShape(RoundedRectangle(cornerRadius: draftRadius.md))
         .frame(width: 160)
     }

@@ -1,0 +1,34 @@
+name: EasyDesignSystem CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  compatibility:
+    name: Public API compatibility
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check public API baseline
+        run: Scripts/check-api-compatibility.sh
+
+  platforms:
+    name: SwiftPM and Apple platform builds
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test iPhone, iPad, macOS and Mac Catalyst
+        run: Scripts/validate-platform-builds.sh
+
+  ui-tests:
+    name: Core ${{ matrix.device-family }} UI tests
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        device-family: [iPhone, iPad]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Catalog UI tests
+        run: Scripts/run-ui-tests.sh "${{ matrix.device-family }}"

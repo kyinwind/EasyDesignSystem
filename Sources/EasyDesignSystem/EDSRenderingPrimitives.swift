@@ -24,6 +24,7 @@ struct EDSSurfaceConfiguration {
 }
 
 private struct EDSSurfacePrimitiveModifier: ViewModifier {
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     let configuration: EDSSurfaceConfiguration
 
     @ViewBuilder
@@ -56,10 +57,16 @@ private struct EDSSurfacePrimitiveModifier: ViewModifier {
         background: AnyShapeStyle,
         shape: RoundedRectangle
     ) -> some View {
-        if let borderColor = configuration.borderColor, configuration.borderWidth > 0 {
+        let borderColor = configuration.borderColor
+            ?? (colorSchemeContrast == .increased ? Color.primary.opacity(0.38) : nil)
+        let borderWidth = colorSchemeContrast == .increased
+            ? max(configuration.borderWidth, 1.5)
+            : configuration.borderWidth
+
+        if let borderColor, borderWidth > 0 {
             content
                 .background(shape.fill(background))
-                .overlay(shape.stroke(borderColor, lineWidth: configuration.borderWidth))
+                .overlay(shape.stroke(borderColor, lineWidth: borderWidth))
         } else {
             content.background(shape.fill(background))
         }

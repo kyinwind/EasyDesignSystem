@@ -129,6 +129,9 @@ public struct EDSPillTone: Sendable {
 
 public struct EDSPill: View {
     @Environment(\.edsTheme) private var theme
+    @Environment(\.edsInteractionProfile) private var interactionProfile
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let title: String
     let tone: EDSPillTone
     let minWidth: CGFloat?
@@ -154,20 +157,25 @@ public struct EDSPill: View {
     }
 
     public var body: some View {
-        ZStack {
+        let metrics = EDSResolvedMetrics.resolve(
+            tokens: theme,
+            profile: interactionProfile,
+            horizontalSizeClass: horizontalSizeClass
+        )
+
+        HStack(spacing: theme.spacing.xxs) {
             Text(verbatim: title)
-                .font(theme.typography.captionStrong)
+                .edsFont(.captionStrong, tokens: theme.typography)
                 .foregroundStyle(tone.foreground)
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
-                .frame(maxWidth: .infinity, alignment: .center)
 
-            HStack {
-                Spacer(minLength: 0)
-                removeButton
+            if showsRemoveButton {
+                removeButton(metrics: metrics)
             }
         }
-        .frame(minWidth: minWidth, alignment: .leading)
+        .frame(minWidth: minWidth, alignment: .center)
+        .frame(minHeight: metrics.minimumInteractiveDimension)
         .padding(.horizontal, theme.spacing.sm)
         .padding(.vertical, theme.spacing.xs)
         .background(tone.background)
@@ -183,10 +191,11 @@ public struct EDSPill: View {
         .onHover { hovering in
             isHovering = hovering
         }
+        .modifier(EDSPillAccessibilityModifier(title: title, action: action))
     }
 
     @ViewBuilder
-    private var removeButton: some View {
+    private func removeButton(metrics: EDSResolvedMetrics) -> some View {
         if showsRemoveButton {
             Button {
                 onRemove?()
@@ -195,12 +204,41 @@ public struct EDSPill: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(tone.foreground.opacity(0.72))
                     .frame(width: 16, height: 16)
+                    .frame(
+                        minWidth: metrics.minimumInteractiveDimension,
+                        minHeight: metrics.minimumInteractiveDimension
+                    )
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .disabled(onRemove == nil)
-            .opacity(isHovering ? 1 : 0)
-            .allowsHitTesting(isHovering)
-            .animation(.easeInOut(duration: 0.12), value: isHovering)
+            .accessibilityLabel(Text("删除 \(title)"))
+            .accessibilityHint(Text("从列表中移除"))
+            .opacity(metrics.showsPersistentAuxiliaryActions || isHovering ? 1 : 0)
+            .allowsHitTesting(metrics.showsPersistentAuxiliaryActions || isHovering)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.12), value: isHovering)
+        }
+    }
+}
+
+private struct EDSPillAccessibilityModifier: ViewModifier {
+    let title: String
+    let action: (() -> Void)?
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if let action {
+            content
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel(Text(verbatim: title))
+                .accessibilityAddTraits(.isButton)
+                .accessibilityAction {
+                    action()
+                }
+        } else {
+            content
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel(Text(verbatim: title))
         }
     }
 }

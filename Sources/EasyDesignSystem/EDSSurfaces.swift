@@ -99,7 +99,7 @@ public struct EDSSidebarGroupView: View {
             // 分组标题
             if let title {
                 Text(title)
-                    .font(theme.typography.captionStrong)
+                    .edsFont(.captionStrong, tokens: theme.typography)
                     .foregroundStyle(theme.colors.textTertiary)
                     .padding(.leading, theme.spacing.sm)
             }
@@ -124,11 +124,19 @@ public struct EDSSidebarGroupView: View {
 /// 单个侧边栏菜单项按钮
 public struct EDSSidebarItemButton: View {
     @Environment(\.edsTheme) private var theme
+    @Environment(\.edsInteractionProfile) private var interactionProfile
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     let item: EDSSidebarMenuItem
     let isSelected: Bool
     let action: () -> Void
 
     public var body: some View {
+        let metrics = EDSResolvedMetrics.resolve(
+            tokens: theme,
+            profile: interactionProfile,
+            horizontalSizeClass: horizontalSizeClass
+        )
+
         Button(action: action) {
             HStack(spacing: theme.spacing.sm) {
                 EDSSidebarIcon(
@@ -138,12 +146,13 @@ public struct EDSSidebarItemButton: View {
                 )
 
                 Text(item.label)
-                    .font(theme.typography.body15)
+                    .edsFont(.body15, tokens: theme.typography)
 
                 Spacer()
             }
             .padding(.horizontal, theme.spacing.sm)
             .padding(.vertical, theme.spacing.xs)
+            .frame(minHeight: metrics.minimumInteractiveDimension)
             .background(
                 RoundedRectangle(cornerRadius: theme.radius.sm, style: .continuous)
                     .fill(isSelected ? theme.colors.accentSoft : Color.clear)
@@ -317,13 +326,13 @@ public struct EDSGroup<Content: View>: View {
         VStack(alignment: .leading, spacing: theme.spacing.xxs) {
             if let title {
                 Text(title)
-                    .font(theme.typography.bodyStrong)
+                    .edsFont(.bodyStrong, tokens: theme.typography)
                     .foregroundStyle(theme.colors.textPrimary)
             }
 
             if let subtitle {
                 Text(subtitle)
-                    .font(theme.typography.caption)
+                    .edsFont(.caption, tokens: theme.typography)
                     .foregroundStyle(theme.colors.textSecondary)
             }
         }
@@ -356,12 +365,12 @@ public struct EDSPageSection<Content: View>: View {
             // 标题区域 - 无背景，直接显示在页面上
             VStack(alignment: .leading, spacing: theme.spacing.xxs) {
                 Text(title)
-                    .font(theme.typography.sectionTitle)
+                    .edsFont(.sectionTitle, tokens: theme.typography)
                     .foregroundStyle(theme.colors.textPrimary)
 
                 if let subtitle {
                     Text(subtitle)
-                        .font(theme.typography.caption)
+                        .edsFont(.caption, tokens: theme.typography)
                         .foregroundStyle(theme.colors.textSecondary)
                 }
             }
@@ -410,22 +419,20 @@ public struct EDSHeroPanel<Content: View>: View {
 public struct EDSMultilineSubtitleRow<Content: View>: View {
     @Environment(\.edsTheme) private var theme
     var systemIcon: String? = nil
-    var iconImage: NSImage? = nil
+    var customIcon: Image? = nil
     var iconColor: Color? = nil
     let title: String?
     let subtitle: String?
     let content: Content
 
-    /// 用 @ViewBuilder 让 content 参数支持多视图
-    public init(systemIcon: String? = nil,
-         iconImage: NSImage? = nil,
-         iconColor: Color? = nil,
+    /// 使用 SwiftUI Image 的全平台统一初始化方法。
+    public init(icon: Image,
          title: String? = nil,
          subtitle: String? = nil,
          @ViewBuilder content: () -> Content) {
-        self.systemIcon = systemIcon
-        self.iconImage = iconImage
-        self.iconColor = iconColor
+        self.systemIcon = nil
+        self.customIcon = icon
+        self.iconColor = nil
         self.title = title
         self.subtitle = subtitle
         self.content = content()
@@ -438,14 +445,14 @@ public struct EDSMultilineSubtitleRow<Content: View>: View {
             VStack(alignment: .leading, spacing: 2) {
                 if let title = title {
                     Text(title)
-                        .font(theme.typography.body)
+                        .edsFont(.body, tokens: theme.typography)
                         .foregroundStyle(.primary)
                         //.frame(minWidth: 50)
                 }
 
                 if let subtitle = subtitle {
                     Text(subtitle)
-                        .font(theme.typography.caption)
+                        .edsFont(.caption, tokens: theme.typography)
                         .foregroundStyle(.secondary)
                         .lineLimit(nil)  // 允许多行，不限制
                         .fixedSize(horizontal: false, vertical: true)
@@ -462,8 +469,8 @@ public struct EDSMultilineSubtitleRow<Content: View>: View {
 
     @ViewBuilder
     private var iconView: some View {
-        if let iconImage = iconImage {
-            Image(nsImage: iconImage)
+        if let customIcon {
+            customIcon
                 .resizable()
                 .frame(width: 28, height: 28)
         } else if let systemIcon = systemIcon, let iconColor = iconColor {
@@ -503,7 +510,7 @@ public struct EDSCollapsibleSection<Content: View>: View {
                 HStack {
                     if let title = title {
                         Text(title)
-                            .font(theme.typography.sectionTitle)
+                            .edsFont(.sectionTitle, tokens: theme.typography)
                             .foregroundColor(.primary)
                     }
                     Spacer()
@@ -530,7 +537,7 @@ public struct EDSCollapsibleSection<Content: View>: View {
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .background(Color(.controlBackgroundColor))
+        .background(theme.colors.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: theme.radius.md))
     }
 }

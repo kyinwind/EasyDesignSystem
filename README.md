@@ -1,8 +1,10 @@
 # EasyDesignSystem
 
-EasyDesignSystem 是一套面向 macOS SwiftUI 应用的设计系统。它希望让普通页面用尽可能少的样式代码获得整齐、统一、可适应浅色与深色模式的界面，同时为特殊页面保留完整的精细控制能力。
+EasyDesignSystem 是一套面向 Apple 多平台 SwiftUI 应用的设计系统。它使用统一的语义 API，让 iPhone、iPad、原生 Mac 和 Mac Catalyst 应用快速获得一致、且符合各平台交互习惯的界面，同时为特殊页面保留完整的精细控制能力。
 
+- iOS / iPadOS 17+
 - macOS 14+
+- Mac Catalyst 17+
 - Swift 6
 - SwiftUI
 - API 前缀：`EDS`
@@ -341,6 +343,55 @@ VStack {
 
 系统不会猜测或去重调用方的语义。常规页面保持 Page -> Section -> Group/Card 两到四层即可。
 
+### 平台自动适配
+
+同一份页面代码可以直接用于 iOS、iPadOS、macOS 和 Mac Catalyst，无需在业务层导入 AppKit 或 UIKit：
+
+```swift
+struct AccountPage: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading) {
+                EDSPageTitle("账户")
+                EDSSettingRow("自动同步") {
+                    EDSToggle(isOn: .constant(true), label: "启用")
+                }
+                .easyDesign(.group)
+            }
+            .easyDesign(.page)
+        }
+    }
+}
+```
+
+EasyDesignSystem 会自动选择交互档案：
+
+| 运行环境 | 默认档案 | 主要行为 |
+| --- | --- | --- |
+| iPhone / iPad | Touch | 44pt 最小触控目标、紧凑或常规页面边距 |
+| 原生 macOS | Pointer | 保留桌面端紧凑控件、启用 Hover 增强 |
+| Mac Catalyst | Hybrid | 保证触控目标，同时保留指针 Hover |
+
+页面在紧凑宽度下默认使用 16pt 边距，在常规宽度下默认使用 32pt 边距，内容最大宽度默认是 880pt。显式传入 Easy API 的 `padding` 或 `maxWidth` 时，显式值始终优先。
+
+通常不需要覆盖自动判断；预览特殊环境或构建自定义容器时，可以在局部指定档案：
+
+```swift
+ContentView()
+    .easyDesignInteractionProfile(.touch)
+```
+
+也可以通过主题统一调整自适应值：
+
+```swift
+EDSTheme.shared.configure { tokens in
+    tokens.adaptiveLayout.compactPagePadding = 20
+    tokens.adaptiveLayout.regularPagePadding = 36
+    tokens.adaptiveLayout.readableContentMaxWidth = 960
+    tokens.adaptiveLayout.minimumTouchTarget = 44
+}
+```
+
 ## 5. 主题
 
 ### 全局主题
@@ -559,6 +610,7 @@ EDSProgressPanel(
 | `radius` | `sm` 到 `xl` 的圆角尺度 |
 | `typography` | Hero、页面标题、Section、正文、Caption 和等宽字体 |
 | `controlSize` | 按钮、输入框和行高 |
+| `adaptiveLayout` | 紧凑/常规页面边距、可读宽度和触控目标 |
 | `stroke` | 边框粗细 |
 | `shadow` | 阴影颜色、透明度、半径和偏移 |
 | `heroGradient` | Hero 面板渐变 |
@@ -650,16 +702,22 @@ Package 提供 `EasyDesignSystemCatalog` library target，用于在 Xcode Canvas
 3. 打开上述任意一个 Swift 文件。
 4. 打开 Canvas，然后启动 `#Preview`。
 
-建议在 macOS 浅色和深色外观下都检查 Gallery，特别关注 Page 的背景继承、Group/Card 的层级以及局部主题作用域。
+仓库还提供 `Examples/PlatformCatalog/EDSPlatformCatalog.xcodeproj`，它是真实的多平台宿主 App，可用来编译和检查 iPhone、iPad、原生 macOS与 Mac Catalyst 的共享页面。
+
+建议在各平台的浅色和深色外观下检查 Gallery，特别关注 Page 的背景继承、Group/Card 的层级、触控目标以及局部主题作用域。
 
 ## 8. 开发与验证
 
 ```bash
 swift build
 swift test
+Scripts/check-api-compatibility.sh
+Scripts/validate-platform-builds.sh
 ```
 
 如果本机同时安装了 Command Line Tools 和 Xcode，请确保使用与当前 macOS SDK 匹配的 Swift 工具链。
+
+升级既有 macOS 项目或主题 JSON 时，请参阅 [`docs/多平台迁移指南.md`](docs/多平台迁移指南.md)。平台边界、颜色导出规则和当前限制也记录在该文档中。
 
 ## 9. License
 

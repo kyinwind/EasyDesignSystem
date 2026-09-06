@@ -38,12 +38,12 @@ public struct EDSPageTitle: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: theme.spacing.xs) {
             Text(title)
-                .font(theme.typography.pageTitle)
+                .edsFont(.pageTitle, tokens: theme.typography)
                 .foregroundStyle(theme.colors.textPrimary)
 
             if let subtitle {
                 Text(subtitle)
-                    .font(theme.typography.body)
+                    .edsFont(.body, tokens: theme.typography)
                     .foregroundStyle(theme.colors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -80,15 +80,15 @@ public struct EDSSectionTitle: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: theme.spacing.xxs) {
             titleText
-                .font(theme.typography.sectionTitle)
+                .edsFont(.sectionTitle, tokens: theme.typography)
                 .foregroundStyle(theme.colors.textPrimary)
 
             if let subtitleText {
                 subtitleText
-                    .font(theme.typography.caption)
+                    .edsFont(.caption, tokens: theme.typography)
                     .foregroundStyle(theme.colors.textSecondary)
-                    .lineLimit(3)
-                    .truncationMode(.tail)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -109,7 +109,7 @@ public struct EDSLabelText: View {
 
     public var body: some View {
         Text(text)
-            .font(theme.typography.captionStrong)
+            .edsFont(.captionStrong, tokens: theme.typography)
             .foregroundStyle(theme.colors.textSecondary)
             .textCase(nil)
     }
@@ -128,7 +128,7 @@ public struct EDSCaptionText: View {
 
     public var body: some View {
         Text(text)
-            .font(theme.typography.caption)
+            .edsFont(.caption, tokens: theme.typography)
             .foregroundStyle(theme.colors.textSecondary)
     }
 }
@@ -146,7 +146,7 @@ public struct EDSMonoText: View {
 
     public var body: some View {
         Text(text)
-            .font(theme.typography.monoCaption)
+            .edsFont(.monoCaption, tokens: theme.typography)
             .foregroundStyle(theme.colors.textSecondary)
             .lineLimit(1)
             .truncationMode(.middle)

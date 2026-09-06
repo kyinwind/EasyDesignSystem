@@ -108,9 +108,16 @@ struct EDSEasyRecipe: Equatable {
     static func resolve(
         style: EDSEasyStyle,
         options: EDSEasyOptions = EDSEasyOptions(),
-        tokens: EDSDesignTokens
+        tokens: EDSDesignTokens,
+        profile: EDSInteractionProfile = .automatic,
+        horizontalSizeClass: UserInterfaceSizeClass? = nil
     ) -> EDSEasyRecipe {
-        var recipe = base(style: style, tokens: tokens)
+        var recipe = base(
+            style: style,
+            tokens: tokens,
+            profile: profile,
+            horizontalSizeClass: horizontalSizeClass
+        )
 
         if let padding = options.padding.resolve(in: tokens.spacing) {
             recipe = recipe.replacing(
@@ -142,13 +149,24 @@ struct EDSEasyRecipe: Equatable {
         return recipe
     }
 
-    private static func base(style: EDSEasyStyle, tokens: EDSDesignTokens) -> EDSEasyRecipe {
-        switch style {
+    private static func base(
+        style: EDSEasyStyle,
+        tokens: EDSDesignTokens,
+        profile: EDSInteractionProfile,
+        horizontalSizeClass: UserInterfaceSizeClass?
+    ) -> EDSEasyRecipe {
+        let metrics = EDSResolvedMetrics.resolve(
+            tokens: tokens,
+            profile: profile,
+            horizontalSizeClass: horizontalSizeClass
+        )
+
+        return switch style {
         case .page:
             EDSEasyRecipe(
-                padding: tokens.spacing.xxl,
+                padding: metrics.pagePadding,
                 paddingAxis: .all,
-                width: .fixed(880),
+                width: .fixed(metrics.readableContentMaxWidth),
                 background: .inherited,
                 cornerRadius: 0,
                 showsBorder: false,
@@ -227,6 +245,8 @@ struct EDSEasyRecipe: Equatable {
 
 private struct EDSEasyDesignModifier: ViewModifier {
     @Environment(\.edsTheme) private var inheritedTokens
+    @Environment(\.edsInteractionProfile) private var interactionProfile
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     let style: EDSEasyStyle
     let options: EDSEasyOptions
@@ -234,7 +254,13 @@ private struct EDSEasyDesignModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         let tokens = localTokens ?? inheritedTokens
-        let recipe = EDSEasyRecipe.resolve(style: style, options: options, tokens: tokens)
+        let recipe = EDSEasyRecipe.resolve(
+            style: style,
+            options: options,
+            tokens: tokens,
+            profile: interactionProfile,
+            horizontalSizeClass: horizontalSizeClass
+        )
 
         content
             .modifier(EDSEasyPaddingModifier(recipe: recipe))
@@ -242,7 +268,7 @@ private struct EDSEasyDesignModifier: ViewModifier {
             .modifier(EDSEasySurfaceModifier(recipe: recipe, tokens: tokens))
             .environment(\.edsTheme, tokens)
             .tint(tokens.colors.accent)
-            .font(tokens.typography.body)
+            .edsFont(.body, tokens: tokens.typography)
             .foregroundStyle(tokens.colors.textPrimary)
     }
 }

@@ -100,12 +100,12 @@ public struct EDSLoadingState: View {
 
             VStack(spacing: theme.spacing.xs) {
                 Text(title)
-                    .font(theme.typography.bodyStrong)
+                    .edsFont(.bodyStrong, tokens: theme.typography)
                     .foregroundStyle(theme.colors.textPrimary)
 
                 if let message {
                     Text(message)
-                        .font(theme.typography.caption)
+                        .edsFont(.caption, tokens: theme.typography)
                         .foregroundStyle(theme.colors.textSecondary)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
@@ -119,6 +119,7 @@ public struct EDSLoadingState: View {
 
 public struct EDSProgressPanel: View {
     @Environment(\.edsTheme) private var theme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let title: LocalizedStringKey
     let subtitle: LocalizedStringKey?
     let fractionCompleted: Double
@@ -164,7 +165,7 @@ public struct EDSProgressPanel: View {
 
                     if let statusText {
                         Text(statusText)
-                            .font(theme.typography.caption)
+                            .edsFont(.caption, tokens: theme.typography)
                             .foregroundStyle(theme.colors.textSecondary)
                     }
                 }
@@ -173,26 +174,41 @@ public struct EDSProgressPanel: View {
     }
 
     private var header: some View {
-        HStack(alignment: .firstTextBaseline, spacing: theme.spacing.md) {
-            VStack(alignment: .leading, spacing: theme.spacing.xxs) {
-                Text(title)
-                    .font(theme.typography.bodyStrong)
-                    .foregroundStyle(theme.colors.textPrimary)
-
-                if let subtitle {
-                    Text(subtitle)
-                        .font(theme.typography.caption)
-                        .foregroundStyle(theme.colors.textSecondary)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: theme.spacing.sm) {
+                    headerText
+                    actionButton
+                }
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: theme.spacing.md) {
+                    headerText
+                    Spacer(minLength: theme.spacing.md)
+                    actionButton
                 }
             }
+        }
+    }
 
-            Spacer(minLength: theme.spacing.md)
+    private var headerText: some View {
+        VStack(alignment: .leading, spacing: theme.spacing.xxs) {
+            Text(title)
+                .edsFont(.bodyStrong, tokens: theme.typography)
+                .foregroundStyle(theme.colors.textPrimary)
 
-            if let actionTitle, let action {
-                EDSButton(actionTitle, role: .soft, systemImage: actionSystemImage, action: action)
+            if let subtitle {
+                Text(subtitle)
+                    .edsFont(.caption, tokens: theme.typography)
+                    .foregroundStyle(theme.colors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var actionButton: some View {
+        if let actionTitle, let action {
+            EDSButton(actionTitle, role: .soft, systemImage: actionSystemImage, action: action)
         }
     }
 
@@ -225,12 +241,12 @@ private struct EDSStateContent: View {
 
             VStack(spacing: theme.spacing.xs) {
                 Text(title)
-                    .font(theme.typography.sectionTitle)
+                    .edsFont(.sectionTitle, tokens: theme.typography)
                     .foregroundStyle(theme.colors.textPrimary)
 
                 if let message {
                     Text(message)
-                        .font(theme.typography.caption)
+                        .edsFont(.caption, tokens: theme.typography)
                         .foregroundStyle(theme.colors.textSecondary)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)

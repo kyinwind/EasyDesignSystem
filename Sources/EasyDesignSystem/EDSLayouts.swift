@@ -80,6 +80,8 @@ public struct EDSPage<Content: View>: View {
 /// DesignSystem 的页面标题、最大宽度、padding 和 section 间距规则。
 public struct EDSPageStack<Content: View>: View {
     @Environment(\.edsTheme) private var theme
+    @Environment(\.edsInteractionProfile) private var interactionProfile
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     let title: LocalizedStringKey?
     let subtitle: LocalizedStringKey?
     let maxWidth: CGFloat?
@@ -104,6 +106,12 @@ public struct EDSPageStack<Content: View>: View {
     }
 
     public var body: some View {
+        let metrics = EDSResolvedMetrics.resolve(
+            tokens: theme,
+            profile: interactionProfile,
+            horizontalSizeClass: horizontalSizeClass
+        )
+
         VStack(alignment: .leading, spacing: spacing ?? theme.spacing.xl) {
             if let title {
                 EDSPageTitle(title, subtitle: subtitle)
@@ -113,6 +121,6 @@ public struct EDSPageStack<Content: View>: View {
         }
         .frame(maxWidth: maxWidth, alignment: .leading)
         .frame(maxWidth: .infinity, alignment: .center)
-        .padding(padding ?? theme.spacing.xxl)
+        .padding(padding ?? metrics.pagePadding)
     }
 }

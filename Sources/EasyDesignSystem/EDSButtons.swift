@@ -5,24 +5,34 @@ import SwiftUI
 public struct EDSPrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.edsTheme) private var theme
+    @Environment(\.edsInteractionProfile) private var interactionProfile
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isHovered = false
 
     public init() {}
 
     public func makeBody(configuration: Configuration) -> some View {
+        let metrics = EDSResolvedMetrics.resolve(
+            tokens: theme,
+            profile: interactionProfile,
+            horizontalSizeClass: horizontalSizeClass
+        )
+        let showsHover = metrics.supportsHoverEnhancement && isHovered
+
         configuration.label
-            .font(theme.typography.bodyStrong)
+            .edsFont(.bodyStrong, tokens: theme.typography)
             .foregroundColor(.white)
-            .frame(height: theme.controlSize.buttonHeight)
+            .frame(minHeight: metrics.interactiveHeight(for: theme.controlSize.buttonHeight))
             .padding(.horizontal, theme.spacing.md)
             .background(
                 RoundedRectangle(cornerRadius: theme.radius.md)
                     .fill(theme.colors.primary)
             )
             .contentShape(RoundedRectangle(cornerRadius: theme.radius.md))
-            .opacity(isEnabled ? (isHovered ? 0.85 : 1.0) : 0.5)
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: isHovered)
+            .opacity(isEnabled ? (showsHover ? 0.85 : 1.0) : 0.5)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1.0)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.15), value: isHovered)
             .onHover { hovering in
                 isHovered = hovering
             }
@@ -32,24 +42,34 @@ public struct EDSPrimaryButtonStyle: ButtonStyle {
 public struct EDSSecondaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.edsTheme) private var theme
+    @Environment(\.edsInteractionProfile) private var interactionProfile
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isHovered = false
 
     public init() {}
 
     public func makeBody(configuration: Configuration) -> some View {
+        let metrics = EDSResolvedMetrics.resolve(
+            tokens: theme,
+            profile: interactionProfile,
+            horizontalSizeClass: horizontalSizeClass
+        )
+        let showsHover = metrics.supportsHoverEnhancement && isHovered
+
         configuration.label
-            .font(theme.typography.bodyStrong)
+            .edsFont(.bodyStrong, tokens: theme.typography)
             .foregroundColor(theme.colors.primary)
-            .frame(height: theme.controlSize.buttonHeight)
+            .frame(minHeight: metrics.interactiveHeight(for: theme.controlSize.buttonHeight))
             .padding(.horizontal, theme.spacing.md)
             .background(
                 RoundedRectangle(cornerRadius: theme.radius.md)
                     .stroke(theme.colors.primary, lineWidth: 1.5)
             )
             .contentShape(RoundedRectangle(cornerRadius: theme.radius.md))
-            .opacity(isEnabled ? (isHovered ? 0.85 : 1.0) : 0.5)
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: isHovered)
+            .opacity(isEnabled ? (showsHover ? 0.85 : 1.0) : 0.5)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1.0)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.15), value: isHovered)
             .onHover { hovering in
                 isHovered = hovering
             }
@@ -59,24 +79,34 @@ public struct EDSSecondaryButtonStyle: ButtonStyle {
 public struct EDSSoftButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.edsTheme) private var theme
+    @Environment(\.edsInteractionProfile) private var interactionProfile
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isHovered = false
 
     public init() {}
 
     public func makeBody(configuration: Configuration) -> some View {
+        let metrics = EDSResolvedMetrics.resolve(
+            tokens: theme,
+            profile: interactionProfile,
+            horizontalSizeClass: horizontalSizeClass
+        )
+        let showsHover = metrics.supportsHoverEnhancement && isHovered
+
         configuration.label
-            .font(theme.typography.bodyStrong)
+            .edsFont(.bodyStrong, tokens: theme.typography)
             .foregroundColor(theme.colors.primary)
-            .frame(height: theme.controlSize.buttonHeight)
+            .frame(minHeight: metrics.interactiveHeight(for: theme.controlSize.buttonHeight))
             .padding(.horizontal, theme.spacing.md)
             .background(
                 RoundedRectangle(cornerRadius: theme.radius.md)
                     .fill(theme.colors.accentSoft)
             )
             .contentShape(RoundedRectangle(cornerRadius: theme.radius.md))
-            .opacity(isEnabled ? (isHovered ? 0.85 : 1.0) : 0.5)
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: isHovered)
+            .opacity(isEnabled ? (showsHover ? 0.85 : 1.0) : 0.5)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1.0)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.15), value: isHovered)
             .onHover { hovering in
                 isHovered = hovering
             }
@@ -86,24 +116,34 @@ public struct EDSSoftButtonStyle: ButtonStyle {
 public struct EDSDangerButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.edsTheme) private var theme
+    @Environment(\.edsInteractionProfile) private var interactionProfile
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isHovered = false
 
     public init() {}
 
     public func makeBody(configuration: Configuration) -> some View {
+        let metrics = EDSResolvedMetrics.resolve(
+            tokens: theme,
+            profile: interactionProfile,
+            horizontalSizeClass: horizontalSizeClass
+        )
+        let showsHover = metrics.supportsHoverEnhancement && isHovered
+
         configuration.label
-            .font(theme.typography.bodyStrong)
+            .edsFont(.bodyStrong, tokens: theme.typography)
             .foregroundColor(.white)
-            .frame(height: theme.controlSize.buttonHeight)
+            .frame(minHeight: metrics.interactiveHeight(for: theme.controlSize.buttonHeight))
             .padding(.horizontal, theme.spacing.md)
             .background(
                 RoundedRectangle(cornerRadius: theme.radius.md)
                     .fill(theme.colors.danger)
             )
             .contentShape(RoundedRectangle(cornerRadius: theme.radius.md))
-            .opacity(isEnabled ? (isHovered ? 0.85 : 1.0) : 0.5)
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: isHovered)
+            .opacity(isEnabled ? (showsHover ? 0.85 : 1.0) : 0.5)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1.0)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.15), value: isHovered)
             .onHover { hovering in
                 isHovered = hovering
             }
@@ -263,6 +303,7 @@ public enum EDSSidebarIconPresetTint {
 
 public struct EDSBadge: View {
     @Environment(\.edsTheme) private var theme
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
     public enum Style {
         case neutral   // 中性：灰色
         case accent    // 主题色：跟随 primary
@@ -297,8 +338,11 @@ public struct EDSBadge: View {
     }
 
     public var body: some View {
-        badgeText
-            .font(theme.typography.captionStrong)
+        HStack(spacing: theme.spacing.xxs) {
+            badgeText
+            differentiationIcon
+        }
+            .edsFont(.captionStrong, tokens: theme.typography)
             .foregroundColor(foregroundColor)
             .padding(.horizontal, theme.spacing.xs)
             .padding(.vertical, theme.spacing.xxs)
@@ -306,6 +350,25 @@ public struct EDSBadge: View {
                 Capsule()
                     .fill(backgroundColor)
             )
+    }
+
+    @ViewBuilder
+    private var differentiationIcon: some View {
+        if differentiateWithoutColor {
+            switch style {
+            case .success:
+                Image(systemName: "checkmark.circle.fill")
+                    .accessibilityHidden(true)
+            case .warning:
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .accessibilityHidden(true)
+            case .danger:
+                Image(systemName: "xmark.octagon.fill")
+                    .accessibilityHidden(true)
+            case .neutral, .accent:
+                EmptyView()
+            }
+        }
     }
 
     @ViewBuilder
@@ -355,11 +418,12 @@ public struct EDSToggle: View {
     public var body: some View {
         HStack(spacing: theme.spacing.sm) {
             Text(label)
-                .font(theme.typography.body)
+                .edsFont(.body, tokens: theme.typography)
                 .foregroundColor(theme.colors.textPrimary)
             Spacer()
             Toggle("", isOn: $isOn)
                 .toggleStyle(SwitchToggleStyle(tint: theme.colors.primary))
+                .accessibilityLabel(label)
         }
         .padding(.vertical, theme.spacing.sm)
     }

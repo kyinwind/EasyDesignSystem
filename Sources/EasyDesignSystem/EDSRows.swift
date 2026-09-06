@@ -4,6 +4,9 @@ import SwiftUI
 
 public struct EDSSettingRow<Trailing: View>: View {
     @Environment(\.edsTheme) private var theme
+    @Environment(\.edsInteractionProfile) private var interactionProfile
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let title: LocalizedStringKey
     let subtitle: String?
     let trailing: Trailing
@@ -19,25 +22,42 @@ public struct EDSSettingRow<Trailing: View>: View {
     }
 
     public var body: some View {
-        HStack(alignment: .center, spacing: theme.spacing.md) {
-            VStack(alignment: .leading, spacing: theme.spacing.xxs) {
-                Text(title)
-                    .font(theme.typography.bodyStrong)
-                    .foregroundStyle(theme.colors.textPrimary)
+        let metrics = EDSResolvedMetrics.resolve(
+            tokens: theme,
+            profile: interactionProfile,
+            horizontalSizeClass: horizontalSizeClass
+        )
 
-                if let subtitle, !subtitle.isEmpty {
-                    Text(subtitle)
-                        .font(theme.typography.caption)
-                        .foregroundStyle(theme.colors.textSecondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: theme.spacing.sm) {
+                    labels
+                    trailing.frame(maxWidth: .infinity, alignment: .trailing)
+                }
+            } else {
+                HStack(alignment: .center, spacing: theme.spacing.md) {
+                    labels
+                    Spacer(minLength: theme.spacing.md)
+                    trailing
                 }
             }
-
-            Spacer(minLength: theme.spacing.md)
-            trailing
         }
-        .frame(minHeight: theme.controlSize.rowMinHeight)
+        .frame(minHeight: metrics.interactiveHeight(for: theme.controlSize.rowMinHeight))
+    }
+
+    private var labels: some View {
+        VStack(alignment: .leading, spacing: theme.spacing.xxs) {
+            Text(title)
+                .edsFont(.bodyStrong, tokens: theme.typography)
+                .foregroundStyle(theme.colors.textPrimary)
+
+            if let subtitle, !subtitle.isEmpty {
+                Text(subtitle)
+                    .edsFont(.caption, tokens: theme.typography)
+                    .foregroundStyle(theme.colors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
     }
 }
 
@@ -45,6 +65,9 @@ public struct EDSSettingRow<Trailing: View>: View {
 
 public struct EDSValueRow: View {
     @Environment(\.edsTheme) private var theme
+    @Environment(\.edsInteractionProfile) private var interactionProfile
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let title: LocalizedStringKey
     let value: String
     let tone: Color?
@@ -56,18 +79,40 @@ public struct EDSValueRow: View {
     }
 
     public var body: some View {
-        HStack(spacing: theme.spacing.md) {
-            Text(title)
-                .font(theme.typography.body)
-                .foregroundStyle(theme.colors.textSecondary)
+        let metrics = EDSResolvedMetrics.resolve(
+            tokens: theme,
+            profile: interactionProfile,
+            horizontalSizeClass: horizontalSizeClass
+        )
 
-            Spacer()
-
-            Text(value)
-                .font(theme.typography.bodyStrong)
-                .foregroundStyle(tone ?? theme.colors.textPrimary)
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: theme.spacing.xxs) {
+                    titleText
+                    valueText
+                }
+            } else {
+                HStack(spacing: theme.spacing.md) {
+                    titleText
+                    Spacer()
+                    valueText
+                }
+            }
         }
-        .frame(minHeight: 28)
+        .frame(minHeight: metrics.interactiveHeight(for: 28))
+    }
+
+    private var titleText: some View {
+        Text(title)
+            .edsFont(.body, tokens: theme.typography)
+            .foregroundStyle(theme.colors.textSecondary)
+    }
+
+    private var valueText: some View {
+        Text(value)
+            .edsFont(.bodyStrong, tokens: theme.typography)
+            .foregroundStyle(tone ?? theme.colors.textPrimary)
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
 

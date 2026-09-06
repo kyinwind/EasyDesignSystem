@@ -8,6 +8,8 @@ import EasyDesignSystem
 /// `EDSDesignSystemPreview` 主要用于调整 token；`EDSDesignSystemGallery` 用来观察
 /// DesignSystem 在真实页面结构里的默认效果。
 public struct EDSDesignSystemGallery: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var selection: GallerySection.ID = GallerySection.page.id
     @State private var isEnabled = true
     @State private var progress = 0.42
@@ -15,6 +17,7 @@ public struct EDSDesignSystemGallery: View {
     public init() {}
 
     public var body: some View {
+        #if os(macOS)
         HSplitView {
             sidebar
                 .frame(minWidth: 220, idealWidth: 240, maxWidth: 280)
@@ -23,6 +26,14 @@ public struct EDSDesignSystemGallery: View {
                 .frame(minWidth: 560)
         }
         .frame(minWidth: 900, minHeight: 640)
+        #else
+        NavigationSplitView {
+            sidebar
+                .navigationTitle("Gallery")
+        } detail: {
+            selectedContent
+        }
+        #endif
     }
 
     private var sidebar: some View {
@@ -99,7 +110,7 @@ public struct EDSDesignSystemGallery: View {
                     usage: "EDSButton(\"保存设置\", role: .primary, systemImage: \"checkmark\")"
                 ) {
                     EDSGroup(style: .plain) {
-                        HStack(spacing: EDSTheme.shared.spacing.md) {
+                        adaptiveStack {
                             EDSButton("保存设置", role: .primary, systemImage: "checkmark") {}
                             EDSButton("恢复默认", role: .soft, systemImage: "arrow.counterclockwise") {}
                         }
@@ -129,7 +140,7 @@ public struct EDSDesignSystemGallery: View {
             }
 
             EDSPageSection("错误和加载") {
-                HStack(alignment: .top, spacing: EDSTheme.shared.spacing.md) {
+                adaptiveStack {
                     GalleryExample(
                         "EDSErrorState",
                         usage: "EDSErrorState(title: \"加载失败\", actionTitle: \"重试\")"
@@ -164,7 +175,7 @@ public struct EDSDesignSystemGallery: View {
                     usage: "EDSButton(\"主要操作\", role: .primary, systemImage: \"checkmark\")"
                 ) {
                     EDSGroup {
-                        HStack(spacing: EDSTheme.shared.spacing.md) {
+                        adaptiveStack {
                             EDSButton("主要操作", role: .primary, systemImage: "checkmark") {}
                             EDSButton("次要操作", role: .secondary, systemImage: "slider.horizontal.3") {}
                             EDSButton("轻量操作", role: .soft, systemImage: "sparkles") {}
@@ -180,7 +191,7 @@ public struct EDSDesignSystemGallery: View {
                     usage: "EDSBadge(\"已完成\", style: .success) / EDSToggle(isOn: $value)"
                 ) {
                     EDSGroup {
-                        HStack(spacing: EDSTheme.shared.spacing.sm) {
+                        adaptiveStack {
                             EDSBadge("Pro", style: .accent)
                             EDSBadge("已完成", style: .success)
                             EDSBadge("待处理", style: .warning)
@@ -272,7 +283,7 @@ public struct EDSDesignSystemGallery: View {
                     "EDSCard",
                     usage: "EDSCard { ... } / EDSCard(background: ...) { ... }"
                 ) {
-                    HStack(alignment: .top, spacing: EDSTheme.shared.spacing.md) {
+                    adaptiveStack {
                         EDSCard {
                             Text("默认 EDSCard 只提供 padding，不绘制背景。")
                                 .font(EDSTheme.shared.typography.body)
@@ -285,7 +296,29 @@ public struct EDSDesignSystemGallery: View {
                     }
                 }
             }
+
+            EDSPageSection("功能对比") {
+                GalleryExample(
+                    "EDSComparisonSection",
+                    usage: "EDSComparisonSection(features: [(String, Bool, Bool)])"
+                ) {
+                    EDSComparisonSection(features: [
+                        ("跨平台统一 API", true, true),
+                        ("高级主题定制", false, true),
+                        ("这是一项用于验证窄屏和大字号换行的较长功能说明", true, true)
+                    ])
+                }
+            }
         }
+    }
+
+    private func adaptiveStack<Content: View>(
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        let layout: AnyLayout = horizontalSizeClass == .compact || dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: EDSTheme.shared.spacing.md))
+            : AnyLayout(HStackLayout(alignment: .top, spacing: EDSTheme.shared.spacing.md))
+        return layout(content)
     }
 }
 
