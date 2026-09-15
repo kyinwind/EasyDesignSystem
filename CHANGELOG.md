@@ -1,8 +1,27 @@
 # Changelog
 
-本项目遵循语义化版本管理。首个多平台版本目标为 `0.2.0`；正式打 Tag 前，修改继续记录在 `Unreleased`。
+本项目遵循语义化版本管理。`1.0.0` 前，patch 版本用于向后兼容的新增、可见性提升和 Bug 修复；minor 版本用于有架构意义的节点、行为变更或新的对外模型。`1.0.0` 后，新增公开 API 按标准语义化版本管理进入 minor 版本。
 
 ## Unreleased
+
+## 0.2.1
+
+### Added
+
+- 公开 `EDSInteractionProfile.resolved`，供上层读取按平台解析后的交互档案。
+- 公开 `EDSResolvedMetrics`、`resolve(tokens:profile:horizontalSizeClass:)` 和 `interactiveHeight(for:)`，供上层复用自适应度量。
+- 公开 `EDSFontRole` 和 `View.edsFont(_:tokens:)`，并新增跟随当前主题的 `View.edsFont(_:)`。
+
+### Docs
+
+- 说明 pointer 档案的 `minimumInteractiveDimension` 为零，行高应通过 `interactiveHeight(for:)` 计算。
+
+### Fixed
+
+- 将 Swift tools 最低版本从误设的 6.3 调整为 6.1，使包与 GitHub Actions `macos-15` 工具链及 Swift 6.1 宿主兼容。
+- 兼容 Swift 6.1 符号图工具对 SwiftPM 临时测试模块的已知失败，确保公开 API 检查只验证主库符号图。
+
+## 0.2.0
 
 ### Added
 

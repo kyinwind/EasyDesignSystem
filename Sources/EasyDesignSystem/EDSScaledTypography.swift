@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum EDSFontRole {
+public enum EDSFontRole {
     case hero
     case pageTitle
     case sectionTitle
@@ -46,9 +46,23 @@ private struct EDSScaledFontModifier: ViewModifier {
     }
 }
 
-extension View {
+private struct EDSThemedFontModifier: ViewModifier {
+    @Environment(\.edsTheme) private var theme
+    let role: EDSFontRole
+
+    func body(content: Content) -> some View {
+        content.modifier(EDSScaledFontModifier(specification: theme.typography.specification(for: role)))
+    }
+}
+
+public extension View {
     func edsFont(_ role: EDSFontRole, tokens: EDSTypographyTokens) -> some View {
         modifier(EDSScaledFontModifier(specification: tokens.specification(for: role)))
+    }
+
+    /// Applies the font role using the current EasyDesignSystem theme.
+    func edsFont(_ role: EDSFontRole) -> some View {
+        modifier(EDSThemedFontModifier(role: role))
     }
 }
 

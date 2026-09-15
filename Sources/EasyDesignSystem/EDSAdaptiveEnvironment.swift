@@ -10,7 +10,8 @@ public enum EDSInteractionProfile: String, Codable, CaseIterable, Sendable {
     case pointer
     case hybrid
 
-    var resolved: EDSInteractionProfile {
+    /// The effective profile after `.automatic` is resolved for the current platform.
+    public var resolved: EDSInteractionProfile {
         guard self == .automatic else { return self }
 
         #if targetEnvironment(macCatalyst)
@@ -41,14 +42,18 @@ public extension View {
     }
 }
 
-struct EDSResolvedMetrics: Equatable {
-    let pagePadding: CGFloat
-    let readableContentMaxWidth: CGFloat
-    let minimumInteractiveDimension: CGFloat
-    let supportsHoverEnhancement: Bool
-    let showsPersistentAuxiliaryActions: Bool
+/// Adaptive layout and interaction measurements derived from a theme and profile.
+///
+/// `minimumInteractiveDimension` is zero for pointer interaction. Use
+/// `interactiveHeight(for:)` with the control's visual height when sizing rows.
+public struct EDSResolvedMetrics: Equatable {
+    public let pagePadding: CGFloat
+    public let readableContentMaxWidth: CGFloat
+    public let minimumInteractiveDimension: CGFloat
+    public let supportsHoverEnhancement: Bool
+    public let showsPersistentAuxiliaryActions: Bool
 
-    static func resolve(
+    public static func resolve(
         tokens: EDSDesignTokens,
         profile: EDSInteractionProfile,
         horizontalSizeClass: UserInterfaceSizeClass?
@@ -85,7 +90,7 @@ struct EDSResolvedMetrics: Equatable {
         )
     }
 
-    func interactiveHeight(for visualHeight: CGFloat) -> CGFloat {
+    public func interactiveHeight(for visualHeight: CGFloat) -> CGFloat {
         max(visualHeight, minimumInteractiveDimension)
     }
 }
