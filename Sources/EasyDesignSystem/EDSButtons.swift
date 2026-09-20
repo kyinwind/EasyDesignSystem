@@ -1,8 +1,29 @@
 import SwiftUI
 
-// MARK: - EDSButtonStyle 样式定义
+// MARK: - 按钮的三维维度
+//
+// `EDSButton` 的视觉由三个**正交**维度决定，任意组合均有效：
+//
+// - `Emphasis`：视觉分量（实心 / 描边 / 浅底 / 纯文字）
+// - `Tone`：语义色调（主题色 / 中性 / 危险 / 成功 / 警告）
+// - `Size`：尺寸档位（small 28 / regular 34 / large 44）
+//
+// `EDSButton.Role` 是一张「预设别名表」：每个角色对应一组固定的三维组合。
+// 两个入口最终都汇入同一份 `EDSButtonVisualBody` 渲染实现。
 
-public struct EDSPrimaryButtonStyle: ButtonStyle {
+// MARK: - 内部渲染体
+//
+// 承载全部按钮视觉逻辑。
+//
+// 注意：`@Environment` / `@State` 只有定义在 `View` 上才会被 SwiftUI 注入，
+// 因此这段逻辑不能直接写在 `ButtonStyle.makeBody` 里由多个样式共享，
+// 必须落在一个 `View` 上，各 `ButtonStyle` 只负责把配置传进来。
+
+struct EDSButtonVisualBody: View {
+    let label: ButtonStyleConfiguration.Label
+    let isPressed: Bool
+    let appearance: EDSButtonAppearance
+
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.edsTheme) private var theme
     @Environment(\.edsInteractionProfile) private var interactionProfile
@@ -10,171 +31,197 @@ public struct EDSPrimaryButtonStyle: ButtonStyle {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isHovered = false
 
-    public init() {}
-
-    public func makeBody(configuration: Configuration) -> some View {
+    var body: some View {
         let metrics = EDSResolvedMetrics.resolve(
             tokens: theme,
             profile: interactionProfile,
             horizontalSizeClass: horizontalSizeClass
         )
+        let visual = appearance.resolved(tokens: theme)
         let showsHover = metrics.supportsHoverEnhancement && isHovered
 
-        configuration.label
+        label
             .edsFont(.bodyStrong, tokens: theme.typography)
-            .foregroundColor(.white)
-            .frame(minHeight: metrics.interactiveHeight(for: theme.controlSize.buttonHeight))
-            .padding(.horizontal, theme.spacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: theme.radius.md)
-                    .fill(theme.colors.primary)
-            )
+            .foregroundColor(visual.foreground)
+            .frame(minHeight: metrics.interactiveHeight(for: visual.height))
+            .padding(.horizontal, visual.horizontalPadding)
+            .background(backgroundShape(for: visual))
             .contentShape(RoundedRectangle(cornerRadius: theme.radius.md))
             .opacity(isEnabled ? (showsHover ? 0.85 : 1.0) : 0.5)
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1.0)
+            .scaleEffect(isPressed && !reduceMotion ? 0.97 : 1.0)
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.15), value: isHovered)
             .onHover { hovering in
                 isHovered = hovering
             }
+    }
+
+    @ViewBuilder
+    private func backgroundShape(for visual: EDSResolvedButtonVisual) -> some View {
+        let shape = RoundedRectangle(cornerRadius: theme.radius.md)
+        if let borderColor = visual.borderColor {
+            shape.stroke(borderColor, lineWidth: visual.borderWidth)
+        } else if let background = visual.background {
+            shape.fill(background)
+        } else {
+            Color.clear
+        }
+    }
+}
+
+// MARK: - 单一按钮样式
+
+struct EDSButtonStyleCanvas: ButtonStyle {
+    let appearance: EDSButtonAppearance
+
+    func makeBody(configuration: Configuration) -> some View {
+        EDSButtonVisualBody(
+            label: configuration.label,
+            isPressed: configuration.isPressed,
+            appearance: appearance
+        )
+    }
+}
+
+// MARK: - 兼容保留的四个旧样式
+//
+// 这四个类型此前已公开，外部 App 可能直接使用 `.buttonStyle(EDSPrimaryButtonStyle())`。
+// 保留为独立类型以保证源码零破坏，内部统一转发到 `EDSButtonVisualBody`。
+//
+// 它们与 `EDSButton.Role` 的对应关系见 `EDSButtonAppearance` 中的别名表。
+
+public struct EDSPrimaryButtonStyle: ButtonStyle {
+    public init() {}
+
+    public func makeBody(configuration: Configuration) -> some View {
+        EDSButtonVisualBody(
+            label: configuration.label,
+            isPressed: configuration.isPressed,
+            appearance: EDSButtonAppearance(emphasis: .filled, tone: .accent, size: .regular)
+        )
     }
 }
 
 public struct EDSSecondaryButtonStyle: ButtonStyle {
-    @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.edsTheme) private var theme
-    @Environment(\.edsInteractionProfile) private var interactionProfile
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var isHovered = false
-
     public init() {}
 
     public func makeBody(configuration: Configuration) -> some View {
-        let metrics = EDSResolvedMetrics.resolve(
-            tokens: theme,
-            profile: interactionProfile,
-            horizontalSizeClass: horizontalSizeClass
+        EDSButtonVisualBody(
+            label: configuration.label,
+            isPressed: configuration.isPressed,
+            appearance: EDSButtonAppearance(emphasis: .outline, tone: .accent, size: .regular)
         )
-        let showsHover = metrics.supportsHoverEnhancement && isHovered
-
-        configuration.label
-            .edsFont(.bodyStrong, tokens: theme.typography)
-            .foregroundColor(theme.colors.primary)
-            .frame(minHeight: metrics.interactiveHeight(for: theme.controlSize.buttonHeight))
-            .padding(.horizontal, theme.spacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: theme.radius.md)
-                    .stroke(theme.colors.primary, lineWidth: 1.5)
-            )
-            .contentShape(RoundedRectangle(cornerRadius: theme.radius.md))
-            .opacity(isEnabled ? (showsHover ? 0.85 : 1.0) : 0.5)
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1.0)
-            .animation(reduceMotion ? nil : .easeInOut(duration: 0.15), value: isHovered)
-            .onHover { hovering in
-                isHovered = hovering
-            }
     }
 }
 
 public struct EDSSoftButtonStyle: ButtonStyle {
-    @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.edsTheme) private var theme
-    @Environment(\.edsInteractionProfile) private var interactionProfile
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var isHovered = false
-
     public init() {}
 
     public func makeBody(configuration: Configuration) -> some View {
-        let metrics = EDSResolvedMetrics.resolve(
-            tokens: theme,
-            profile: interactionProfile,
-            horizontalSizeClass: horizontalSizeClass
+        EDSButtonVisualBody(
+            label: configuration.label,
+            isPressed: configuration.isPressed,
+            appearance: EDSButtonAppearance(emphasis: .soft, tone: .accent, size: .regular)
         )
-        let showsHover = metrics.supportsHoverEnhancement && isHovered
-
-        configuration.label
-            .edsFont(.bodyStrong, tokens: theme.typography)
-            .foregroundColor(theme.colors.primary)
-            .frame(minHeight: metrics.interactiveHeight(for: theme.controlSize.buttonHeight))
-            .padding(.horizontal, theme.spacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: theme.radius.md)
-                    .fill(theme.colors.accentSoft)
-            )
-            .contentShape(RoundedRectangle(cornerRadius: theme.radius.md))
-            .opacity(isEnabled ? (showsHover ? 0.85 : 1.0) : 0.5)
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1.0)
-            .animation(reduceMotion ? nil : .easeInOut(duration: 0.15), value: isHovered)
-            .onHover { hovering in
-                isHovered = hovering
-            }
     }
 }
 
 public struct EDSDangerButtonStyle: ButtonStyle {
-    @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.edsTheme) private var theme
-    @Environment(\.edsInteractionProfile) private var interactionProfile
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var isHovered = false
-
     public init() {}
 
     public func makeBody(configuration: Configuration) -> some View {
-        let metrics = EDSResolvedMetrics.resolve(
-            tokens: theme,
-            profile: interactionProfile,
-            horizontalSizeClass: horizontalSizeClass
+        EDSButtonVisualBody(
+            label: configuration.label,
+            isPressed: configuration.isPressed,
+            appearance: EDSButtonAppearance(emphasis: .filled, tone: .danger, size: .regular)
         )
-        let showsHover = metrics.supportsHoverEnhancement && isHovered
-
-        configuration.label
-            .edsFont(.bodyStrong, tokens: theme.typography)
-            .foregroundColor(.white)
-            .frame(minHeight: metrics.interactiveHeight(for: theme.controlSize.buttonHeight))
-            .padding(.horizontal, theme.spacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: theme.radius.md)
-                    .fill(theme.colors.danger)
-            )
-            .contentShape(RoundedRectangle(cornerRadius: theme.radius.md))
-            .opacity(isEnabled ? (showsHover ? 0.85 : 1.0) : 0.5)
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1.0)
-            .animation(reduceMotion ? nil : .easeInOut(duration: 0.15), value: isHovered)
-            .onHover { hovering in
-                isHovered = hovering
-            }
     }
 }
 
 // MARK: - EDSButton：通用按钮
 
 public struct EDSButton: View {
-    public enum Role {
-        case primary
-        case secondary
+
+    // MARK: 三维维度（正交轴）
+
+    /// 视觉分量：这块按钮"多重"，是否抢视觉焦点。
+    public enum Emphasis: String, Sendable, Hashable, CaseIterable {
+        /// 实心：视觉最强。
+        case filled
+        /// 描边：次级。
+        case outline
+        /// 浅色底：较弱。
         case soft
-        case danger
+        /// 纯文字：最弱。
+        case plain
     }
 
-    private let role: Role
+    /// 语义色调：这块按钮"是什么性质"。
+    public enum Tone: String, Sendable, Hashable, CaseIterable {
+        /// 主题色，用于正常操作。
+        case accent
+        /// 中性灰。
+        case neutral
+        /// 破坏性操作。
+        case danger
+        /// 成功 / 已完成。
+        case success
+        /// 警示。
+        case warning
+    }
+
+    /// 尺寸档位。
+    public enum Size: String, Sendable, Hashable, CaseIterable {
+        /// 28pt，密集工具栏。
+        case small
+        /// 34pt，默认值（等于 `controlSize.buttonHeight`）。
+        case regular
+        /// 44pt，主行动区。
+        case large
+    }
+
+    // MARK: 预设别名表
+    //
+    // 注意：`Role` 不是"一个维度"，而是一张快捷方式对照表。
+    // 因此它内部允许混用视觉词（`.primary`）与场景词（`.done`）——
+    // 类比 Bootstrap 的 `.btn-primary` / `.btn-danger` 本来就不在同一维度上。
+    //
+    // 新增条目须对应"真实且重复出现的场景"，建议上限 8–10 条。
+
+    public enum Role: String, Sendable, Hashable, CaseIterable {
+        /// 实心主题色。等价于 `filled + accent + regular`。
+        case primary
+        /// 主题色描边。等价于 `outline + accent + regular`。
+        case secondary
+        /// 主题色浅底。等价于 `soft + accent + regular`。
+        case soft
+        /// 实心危险色。等价于 `filled + danger + regular`。
+        case danger
+        /// 已完成（实心绿底 + ✓）。等价于 `filled + success + regular`。
+        ///
+        /// 取实心档而非浅底档：12% 浅绿在浅色外观下几乎与页面底色融为一体，
+        /// 作为"点击进去有内容"的入口体量不足。实心绿同时解决了与 `EDSBadge(.success)`
+        /// 的体量混淆——两者不再只是底色深浅之差。
+        case done
+    }
+
+    private let appearance: EDSButtonAppearance
     private let action: () -> Void
     private let label: () -> AnyView
 
+    // MARK: 初始化
+
+    /// 使用预设角色并提供自定义标签视图。
     public init(
         _ role: Role = .primary,
         action: @escaping () -> Void,
         @ViewBuilder label: @escaping () -> some View
     ) {
-        self.role = role
+        self.appearance = role.appearance
         self.action = action
         self.label = { AnyView(label()) }
     }
 
-    /// 文本文案按钮的便捷初始化。
+    /// 文本文案按钮的便捷初始化（预设角色入口）。
     ///
     /// ```swift
     /// EDSButton("保存", role: .primary, systemImage: "checkmark") {
@@ -187,7 +234,37 @@ public struct EDSButton: View {
         systemImage: String? = nil,
         action: @escaping () -> Void
     ) {
-        self.role = role
+        self.appearance = role.appearance
+        self.action = action
+        let resolvedImage = systemImage ?? Self.defaultSystemImage(for: role)
+        self.label = {
+            if let resolvedImage {
+                AnyView(Label(title, systemImage: resolvedImage))
+            } else {
+                AnyView(Text(title))
+            }
+        }
+    }
+
+    /// 三维原语初始化。
+    ///
+    /// `emphasis` **刻意不给默认值**：一旦给出，`EDSButton("确定") { }` 会同时匹配
+    /// 本初始化与「预设角色」初始化，编译器将报 `ambiguous use of 'init'`。
+    /// 强制调用方至少写出一个维度，是消除歧义的唯一手段。
+    ///
+    /// ```swift
+    /// EDSButton("忽略并删除", emphasis: .soft, tone: .danger) { }
+    /// EDSButton("确定", emphasis: .filled, size: .small) { }
+    /// ```
+    public init(
+        _ title: LocalizedStringKey,
+        emphasis: Emphasis,
+        tone: Tone = .accent,
+        size: Size = .regular,
+        systemImage: String? = nil,
+        action: @escaping () -> Void
+    ) {
+        self.appearance = EDSButtonAppearance(emphasis: emphasis, tone: tone, size: size)
         self.action = action
         self.label = {
             if let systemImage {
@@ -199,22 +276,177 @@ public struct EDSButton: View {
     }
 
     public var body: some View {
-        Group {
-            switch role {
-            case .primary:
-                Button(action: action) { label() }
-                    .buttonStyle(EDSPrimaryButtonStyle())
-            case .secondary:
-                Button(action: action) { label() }
-                    .buttonStyle(EDSSecondaryButtonStyle())
-            case .soft:
-                Button(action: action) { label() }
-                    .buttonStyle(EDSSoftButtonStyle())
-            case .danger:
-                Button(action: action) { label() }
-                    .buttonStyle(EDSDangerButtonStyle())
-            }
+        Button(action: action) { label() }
+            .buttonStyle(EDSButtonStyleCanvas(appearance: appearance))
+    }
+
+    /// `.done` 在调用方未显式指定图标时自动补 `checkmark`。
+    ///
+    /// 承载"已完成"语义，使颜色不再是唯一线索——同时满足
+    /// `accessibilityDifferentiateWithoutColor`，与 `EDSBadge` 的既有策略一致。
+    private static func defaultSystemImage(for role: Role) -> String? {
+        switch role {
+        case .done:
+            return "checkmark"
+        case .primary, .secondary, .soft, .danger:
+            return nil
         }
+    }
+}
+
+// MARK: - EDSButtonAppearance
+//
+// 三维组合的值对象。公开可构造，供包外 App 自封装预设使用。
+
+public struct EDSButtonAppearance: Sendable, Hashable {
+    public var emphasis: EDSButton.Emphasis
+    public var tone: EDSButton.Tone
+    public var size: EDSButton.Size
+
+    public init(
+        emphasis: EDSButton.Emphasis = .filled,
+        tone: EDSButton.Tone = .accent,
+        size: EDSButton.Size = .regular
+    ) {
+        self.emphasis = emphasis
+        self.tone = tone
+        self.size = size
+    }
+}
+
+extension EDSButton.Role {
+    /// 预设别名表：每个角色对应一组固定的三维组合。
+    public var appearance: EDSButtonAppearance {
+        switch self {
+        case .primary:
+            return EDSButtonAppearance(emphasis: .filled, tone: .accent, size: .regular)
+        case .secondary:
+            return EDSButtonAppearance(emphasis: .outline, tone: .accent, size: .regular)
+        case .soft:
+            return EDSButtonAppearance(emphasis: .soft, tone: .accent, size: .regular)
+        case .danger:
+            return EDSButtonAppearance(emphasis: .filled, tone: .danger, size: .regular)
+        case .done:
+            return EDSButtonAppearance(emphasis: .filled, tone: .success, size: .regular)
+        }
+    }
+}
+
+// MARK: - 解析结果
+
+/// 三维组合经主题解析后的具体视觉值。纯计算结果，不对外暴露。
+struct EDSResolvedButtonVisual {
+    let foreground: Color
+    let background: Color?
+    let borderColor: Color?
+    let borderWidth: CGFloat
+    let height: CGFloat
+    let horizontalPadding: CGFloat
+}
+
+extension EDSButtonAppearance {
+
+    /// 把三维组合解析为具体视觉值。
+    ///
+    /// 纯函数：只依赖传入的 token，不读全局单例，便于测试。
+    func resolved(tokens: EDSDesignTokens) -> EDSResolvedButtonVisual {
+        let colors = tokens.colors
+
+        // 各色调的前景色基色（实心档除外，实心档文字另有规则）
+        let toneColor: Color
+        switch tone {
+        case .accent:  toneColor = colors.primary
+        case .neutral: toneColor = Color.primary
+        case .danger:  toneColor = colors.danger
+        case .success: toneColor = colors.success
+        case .warning: toneColor = colors.warning
+        }
+
+        // 浅底档的背景色：各色调的 12% 透明版本
+        let toneSoftColor: Color
+        switch tone {
+        case .accent:  toneSoftColor = colors.accentSoft
+        case .neutral: toneSoftColor = Color.primary.opacity(0.12)
+        case .danger:  toneSoftColor = colors.dangerSoft
+        case .success: toneSoftColor = colors.successSoft
+        case .warning: toneSoftColor = colors.warningSoft
+        }
+
+        let foreground: Color
+        let background: Color?
+        let borderColor: Color?
+
+        switch emphasis {
+        case .filled:
+            switch tone {
+            case .neutral:
+                // 中性实心需要"反色"：底色是 primary 的 75%，文字用页面底色，
+                // 这样浅色外观下是"深灰底 + 白字"，深色外观下是"浅灰底 + 深字"。
+                foreground = colors.pageBackground
+                background = Color.primary.opacity(0.75)
+            case .accent, .danger:
+                // 历史值：与改造前逐像素一致，保证现有 App 视觉零变化。
+                foreground = .white
+                background = toneColor
+            case .success, .warning:
+                // 这两个色调此前不存在实心档用例，按底色亮度选取可读文字色：
+                // 白字在 #27B15A / #F9B135 上对比度仅约 2.8:1 / 1.9:1，不达 WCAG AA。
+                foreground = colors.textPrimary
+                background = toneColor
+            }
+            borderColor = nil
+
+        case .outline:
+            foreground = toneColor
+            background = nil
+            borderColor = toneColor
+
+        case .soft:
+            // 例外：成功色的浅底 + 同色文字对比度不足（#27B15A 在 12% 浅绿底上约 3.0:1，
+            // 低于 WCAG AA 的 4.5:1），因此改用自适应正文色保证可读性。
+            // 该组合已不再被 `.done` 使用（`.done` 取实心档），但三维入口仍可构造出
+            // `.soft + .success`，故规则保留。
+            foreground = tone == .success ? colors.textPrimary : toneColor
+            background = toneSoftColor
+            borderColor = nil
+
+        case .plain:
+            foreground = toneColor
+            background = nil
+            borderColor = nil
+        }
+
+        // 尺寸档位。
+        //
+        // `.regular` 必须读 token（而非硬编码 34），这样主题若调整 `buttonHeight`
+        // 仍能跟随，且保证改造前后视觉完全一致。
+        // `.small` / `.large` 用固定值：当前主题无多档 `buttonHeight`，
+        // 为一个尚不存在的扩展点引入缩放系数属于过早抽象。
+        let height: CGFloat
+        switch size {
+        case .small:   height = 28
+        case .regular: height = tokens.controlSize.buttonHeight
+        case .large:   height = 44
+        }
+
+        // 横向内边距。`.regular` 用 `spacing.md`(=16)，与改造前一致。
+        let horizontalPadding: CGFloat
+        switch size {
+        case .small:   horizontalPadding = tokens.spacing.sm
+        case .regular: horizontalPadding = tokens.spacing.md
+        case .large:   horizontalPadding = tokens.spacing.lg
+        }
+
+        return EDSResolvedButtonVisual(
+            foreground: foreground,
+            background: background,
+            borderColor: borderColor,
+            // 历史值：现有描边按钮为 1.5pt。改用 `stroke.hairline`(=1) 会让所有
+            // 描边按钮变细，属于视觉变化，因此本次保持 1.5。
+            borderWidth: 1.5,
+            height: height,
+            horizontalPadding: horizontalPadding
+        )
     }
 }
 

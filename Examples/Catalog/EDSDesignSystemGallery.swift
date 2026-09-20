@@ -62,10 +62,18 @@ public struct EDSDesignSystemGallery: View {
             statesExample
         case .controls:
             controlsExample
+        case .buttons:
+            buttonsExample
         case .rows:
             rowsExample
         case .surfaces:
             surfacesExample
+        }
+    }
+
+    private var buttonsExample: some View {
+        EDSPage("按钮三维模型", subtitle: "Emphasis × Tone × Size 三个正交维度，Role 是一张预设别名表") {
+            EDSButtonShowcase(embedsScrollView: false)
         }
     }
 
@@ -367,6 +375,7 @@ private enum GallerySection: String, CaseIterable, Identifiable {
     case page
     case states
     case controls
+    case buttons
     case rows
     case surfaces
 
@@ -390,6 +399,7 @@ private enum GallerySection: String, CaseIterable, Identifiable {
         case .page: return "标准页面"
         case .states: return "状态模式"
         case .controls: return "基础控件"
+        case .buttons: return "按钮"
         case .rows: return "行与标签"
         case .surfaces: return "容器分层"
         }
@@ -400,6 +410,7 @@ private enum GallerySection: String, CaseIterable, Identifiable {
         case .page: return "rectangle.3.group"
         case .states: return "circle.dotted"
         case .controls: return "switch.2"
+        case .buttons: return "hand.tap"
         case .rows: return "list.bullet.rectangle"
         case .surfaces: return "square.stack.3d.up"
         }
@@ -410,12 +421,16 @@ private enum GallerySection: String, CaseIterable, Identifiable {
         case .page: return EDSTheme.shared.colors.primary
         case .states: return EDSTheme.shared.colors.warning
         case .controls: return EDSTheme.shared.colors.success
+        case .buttons: return EDSTheme.shared.colors.danger
         case .rows: return .purple
         case .surfaces: return .teal
         }
     }
 }
 
-#Preview{
-    EDSDesignSystemGallery()
+#Preview("组件 Gallery · 主题可切换") {
+    EDSThemePlayground {
+        EDSDesignSystemGallery()
+    }
+    .frame(width: 1_020, height: 720)
 }

@@ -326,6 +326,9 @@ private enum EasyGallerySection: String, CaseIterable, Identifiable {
     }
 }
 
-#Preview("Easy API Gallery") {
-    EDSEasyAPIDesignSystemGallery()
+#Preview("Easy API Gallery · 主题可切换") {
+    EDSThemePlayground {
+        EDSEasyAPIDesignSystemGallery()
+    }
+    .frame(width: 1_020, height: 760)
 }

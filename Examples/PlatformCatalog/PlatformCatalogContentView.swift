@@ -10,36 +10,39 @@ struct PlatformCatalogContentView: View {
     @State private var selectedTab = ProcessInfo.processInfo.arguments.contains("--adaptive-preview") ? 3 : 0
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            EDSDesignSystemGallery()
-                .accessibilityIdentifier("catalog.components")
-                .tag(0)
-                .tabItem {
-                    Label("组件", systemImage: "square.grid.2x2")
-                }
+        // 主题选择栏对所有 tab 生效：切换后整个 TabView 子树按新单例重建。
+        EDSThemePlayground {
+            TabView(selection: $selectedTab) {
+                EDSDesignSystemGallery()
+                    .accessibilityIdentifier("catalog.components")
+                    .tag(0)
+                    .tabItem {
+                        Label("组件", systemImage: "square.grid.2x2")
+                    }
 
-            EDSEasyAPIDesignSystemGallery()
-                .accessibilityIdentifier("catalog.easy-api")
-                .tag(1)
-                .tabItem {
-                    Label("Easy API", systemImage: "wand.and.stars")
-                }
+                EDSEasyAPIDesignSystemGallery()
+                    .accessibilityIdentifier("catalog.easy-api")
+                    .tag(1)
+                    .tabItem {
+                        Label("Easy API", systemImage: "wand.and.stars")
+                    }
 
-            EDSDesignSystemPreview()
-                .accessibilityIdentifier("catalog.theme")
-                .tag(2)
-                .tabItem {
-                    Label("主题", systemImage: "paintpalette")
-                }
+                EDSDesignSystemPreview()
+                    .accessibilityIdentifier("catalog.theme")
+                    .tag(2)
+                    .tabItem {
+                        Label("主题", systemImage: "paintpalette")
+                    }
 
-            AdaptiveCatalogView()
-                .tag(3)
-                .tabItem {
-                    Label("适配", systemImage: "rectangle.3.group")
-                }
+                AdaptiveCatalogView()
+                    .tag(3)
+                    .tabItem {
+                        Label("适配", systemImage: "rectangle.3.group")
+                    }
+            }
+            .modifier(CatalogWindowSizeModifier())
+            .modifier(CatalogSplitWidthModifier())
         }
-        .modifier(CatalogWindowSizeModifier())
-        .modifier(CatalogSplitWidthModifier())
     }
 }
 

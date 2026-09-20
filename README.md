@@ -533,6 +533,7 @@ HStack {
     EDSButton("次要操作", role: .secondary) {}
     EDSButton("轻量操作", role: .soft) {}
     EDSButton("危险操作", role: .danger) {}
+    EDSButton("已完成", role: .done) {}
 }
 
 HStack {
@@ -544,6 +545,37 @@ HStack {
 
 EDSToggle(isOn: $isEnabled, label: "启用自动处理")
 ```
+
+#### 按钮的三个维度
+
+按钮外观由三个**正交**维度决定，可以自由组合：
+
+| 维度 | 取值 | 含义 |
+| --- | --- | --- |
+| `Emphasis` | `.filled` `.outline` `.soft` `.plain` | 视觉分量——这块按钮“多重” |
+| `Tone` | `.accent` `.neutral` `.danger` `.success` `.warning` | 语义色调——这块按钮“是什么性质” |
+| `Size` | `.small`(28) `.regular`(34) `.large`(44) | 尺寸档位 |
+
+```swift
+EDSButton("忽略并删除", emphasis: .soft, tone: .danger) {}
+EDSButton("更多", emphasis: .plain, systemImage: "ellipsis") {}
+EDSButton("刷新", emphasis: .outline, size: .small) {}
+EDSButton("开始处理", emphasis: .filled, size: .large) {}
+```
+
+`role:` 参数是一张**预设别名表**：一个角色等价于一组固定的三维组合。
+
+| `Role` | 等价于 |
+| --- | --- |
+| `.primary` | `filled` + `accent` + `regular` |
+| `.secondary` | `outline` + `accent` + `regular` |
+| `.soft` | `soft` + `accent` + `regular` |
+| `.danger` | `filled` + `danger` + `regular` |
+| `.done` | `filled` + `success` + `regular`，并自动补 `checkmark` 图标 |
+
+两种写法汇入同一份渲染实现，可以在同一页面里混用。需要自定义预设时，用 `EDSButtonAppearance` 组合三维后自行封装。
+
+> 三维写法要求至少给出 `emphasis:`。这是为了与 `EDSButton("确定") {}` 这类一维写法在编译期区分开——两者若都可省略参数，会产生初始化重载歧义。
 
 ### 文本与行
 

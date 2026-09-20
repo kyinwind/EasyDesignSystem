@@ -4,6 +4,35 @@
 
 ## Unreleased
 
+## 0.3.0
+
+### Added
+
+- `EDSButton` 新增 `Emphasis`、`Tone`、`Size` 三个正交维度：外观由视觉分量、语义色调、尺寸档位三者自由组合决定，此前一维 `Role` 无法表达的组合（如"次要但危险"、"纯文字"、"成功语义"、"小尺寸工具栏"）现已可用。
+- 新增 `EDSButtonAppearance` 值对象与 `EDSButton.Role.appearance` 别名表，供上层以三维组合自封装预设。
+- `EDSButton.Role` 新增 `.done`：实心成功色底 + 自适应正文色 + `checkmark` 图标，用于表达"已完成 / 点击查看"。
+- `EDSButton.Role` / `Emphasis` / `Tone` / `Size` 均实现 `CaseIterable`、`Hashable`、`Sendable`。
+- 新增三维原语初始化 `EDSButton(_:emphasis:tone:size:systemImage:action:)`。`emphasis` 无默认值，用于与既有一维初始化在编译期区分。
+- `EDSColorTokens` 新增派生色 `successSoft`、`warningSoft`、`dangerSoft`（各为该语义色的 12% 透明版本，与既有 `accentSoft` 对称）。
+- `EDSButton.Size` 提供 `.small`（28pt）/ `.regular`（34pt，读取 `controlSize.buttonHeight`）/ `.large`（44pt）三档。
+
+### Changed
+
+- 按钮视觉实现收敛为单一 `EDSButtonVisualBody`，四个旧 `ButtonStyle` 改为转发，消除原有四份近似重复实现。
+- `.default` 预设补齐此前缺失的语义色：`success` = `#27B15A`、`warning` = `#F9B135`、`danger` = `#E54444`，与 `.orange` / `.purple` 预设一致。**此前 `.default` 的语义色会落到动态系统色。此改动会使使用 `.default` 主题的 App 中语义色发生变化**（例如危险按钮的红色由系统红变为 `#E54444`）。
+- 实心档文字色按背景亮度选取：`accent` / `danger` 保持历史值 `.white`；`success` / `warning` 因白字对比度不足（约 2.8:1 / 1.9:1）改用自适应正文色。
+
+### Compatibility
+
+- 无破坏性变更。既有 `EDSButton(role:)`、`EDSButton(_:role:systemImage:action:)`、`EDSButton(action:label:)` 三个初始化签名与行为保持不变；四个旧 `ButtonStyle` 类型保留。
+- 公开 API 兼容性检查通过（无任何公开符号被移除）。
+- `.regular` 档复用 `controlSize.buttonHeight`，描边宽度与内边距沿用历史值，因此现有按钮的尺寸与描边视觉不变。
+
+### Docs
+
+- 新增 `docs/20260920按钮组件技术方案设计.md`、`docs/20260920按钮组件开发计划.md`。
+- 新增 `Examples/Catalog/EDSButtonShowcase.swift`，展示三维组合矩阵、尺寸档位、`.done` 与 `EDSBadge` 的可点击性对照、别名等价性；Gallery 新增对应分组。
+
 ## 0.2.1
 
 ### Added

@@ -284,6 +284,38 @@ final class EasyDesignSystemTests: XCTestCase {
         )
     }
 
+    /// `.done` 的默认外观契约：实心成功色 + 标准尺寸。
+    ///
+    /// 固化于 2026-09-20 目视验收之后。当时 `.done` 由 `.soft` 改为 `.filled`，
+    /// 但磁盘改动被编辑器缓冲区覆盖，Preview 仍显示浅绿底，只靠肉眼才发现。
+    /// 这条断言让"档位被静默改回去"在 `swift test` 阶段就暴露。
+    func testDoneRoleResolvesToFilledSuccess() {
+        let appearance = EDSButton.Role.done.appearance
+        XCTAssertEqual(appearance.emphasis, .filled)
+        XCTAssertEqual(appearance.tone, .success)
+        XCTAssertEqual(appearance.size, .regular)
+    }
+
+    /// `.done` 的改档不波及四个既有 role。
+    func testLegacyRolesKeepTheirAppearance() {
+        XCTAssertEqual(
+            EDSButton.Role.primary.appearance,
+            EDSButtonAppearance(emphasis: .filled, tone: .accent, size: .regular)
+        )
+        XCTAssertEqual(
+            EDSButton.Role.secondary.appearance,
+            EDSButtonAppearance(emphasis: .outline, tone: .accent, size: .regular)
+        )
+        XCTAssertEqual(
+            EDSButton.Role.soft.appearance,
+            EDSButtonAppearance(emphasis: .soft, tone: .accent, size: .regular)
+        )
+        XCTAssertEqual(
+            EDSButton.Role.danger.appearance,
+            EDSButtonAppearance(emphasis: .filled, tone: .danger, size: .regular)
+        )
+    }
+
     private func decodeFixture(_ name: String) throws -> EDSDesignTokens {
         let url = try XCTUnwrap(
             Bundle.module.url(forResource: name, withExtension: "json")

@@ -105,6 +105,9 @@ public struct EDSColorTokens: Codable, Equatable, Sendable {
     // MARK: - 派生色
 
     public var accentSoft: Color { accent.opacity(0.12) }
+    public var successSoft: Color { success.opacity(0.12) }
+    public var warningSoft: Color { warning.opacity(0.12) }
+    public var dangerSoft: Color { danger.opacity(0.12) }
     public var textPrimary: Color { Color.primary }
     public var textSecondary: Color { Color.secondary }
     public var textTertiary: Color { Color.secondary.opacity(0.72) }

@@ -702,6 +702,9 @@ public struct EDSThemeJSONDocument: FileDocument {
 }
 
 
-#Preview{
-    EDSDesignSystemPreview()
+#Preview("主题编辑器 · 主题可切换") {
+    EDSThemePlayground {
+        EDSDesignSystemPreview()
+    }
+    .frame(width: 1_000, height: 720)
 }
