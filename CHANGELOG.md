@@ -2,6 +2,16 @@
 
 本项目遵循语义化版本管理。`1.0.0` 前，patch 版本用于向后兼容的新增、可见性提升和 Bug 修复；minor 版本用于有架构意义的节点、行为变更或新的对外模型。`1.0.0` 后，新增公开 API 按标准语义化版本管理进入 minor 版本。
 
+## Unreleased
+
+### Changed
+
+- `Scripts/check-api-compatibility.sh` 在 GitHub Actions 下把诊断结论写入 **annotation**。
+  本仓库的 job 日志接口需要 admin 权限（`/actions/jobs/{id}/logs` 返回 403），公开可读的
+  只有 annotations —— 此前 CI 失败只能看到一句 `Process completed with exit code 1`，
+  拿不到任何有用信息。现在失败时会带上"哪几条符号消失了"与工具链版本，成功时也会发一条
+  `notice` 记录 core / external 计数。
+
 ## 0.3.1
 
 ### Added
