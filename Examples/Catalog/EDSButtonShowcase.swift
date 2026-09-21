@@ -101,9 +101,13 @@ public struct EDSButtonShowcase: View {
 
                 ForEach(EDSButton.Emphasis.allCases, id: \.self) { emphasis in
                     HStack(spacing: theme.spacing.sm) {
-                        Text(emphasis.rawValue)
+                        // outline 自 0.4.0 废弃（渲染同 medium），行标加注；
+                        // 用 rawValue 比较避免直接引用废弃符号触发告警。
+                        Text(emphasis.rawValue == "outline" ? "outline·废弃" : emphasis.rawValue)
                             .edsFont(.caption, tokens: theme.typography)
-                            .foregroundColor(theme.colors.textSecondary)
+                            .foregroundColor(emphasis.rawValue == "outline"
+                                             ? theme.colors.textTertiary
+                                             : theme.colors.textSecondary)
                             .frame(width: 56, alignment: .leading)
 
                         ForEach(EDSButton.Tone.allCases, id: \.self) { tone in
@@ -221,7 +225,7 @@ public struct EDSButtonShowcase: View {
                 capabilityRow(
                     "工具栏密集操作",
                     "28pt 小尺寸",
-                    EDSButton("刷新", emphasis: .outline, tone: .accent, size: .small) {}
+                    EDSButton("刷新", emphasis: .medium, tone: .accent, size: .small) {}
                 )
                 capabilityRow(
                     "主行动区 CTA",

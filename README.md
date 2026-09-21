@@ -582,7 +582,7 @@ EDSButton("开始处理", emphasis: .filled, size: .large) {}
 
 ```swift
 EDSButton(L("button.cancel"), role: .secondary) { onCancel() }
-EDSButton(L("toolbar.refresh"), emphasis: .outline, size: .small) { refresh() }
+EDSButton(L("toolbar.refresh"), emphasis: .medium, size: .small) { refresh() }
 ```
 
 > 字面量调用（如 `EDSButton("确定")`）稳定命中 `LocalizedStringKey` 版本，两种重载并存不产生歧义。

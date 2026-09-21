@@ -2,7 +2,21 @@
 
 本项目遵循语义化版本管理。`1.0.0` 前，patch 版本用于向后兼容的新增、可见性提升和 Bug 修复；minor 版本用于有架构意义的节点、行为变更或新的对外模型。`1.0.0` 后，新增公开 API 按标准语义化版本管理进入 minor 版本。
 
-## Unreleased
+## 0.4.0 — 2026-09-21
+
+### Changed（行为变更）
+
+- **按钮描边退役，新增 `Emphasis.medium`（50% 中底档）**：四档 emphasis 统一为
+  **底色深浅梯度**——`filled` 100% 实心 → `medium` 50% 色底 → `soft` 12% 浅底 →
+  `plain` 无底。medium 文字用 `textPrimary`（同色字在 50% 彩底上对比度不达 WCAG）。
+- **`Emphasis.outline` 废弃**：保留为废弃别名，渲染与 `medium` 完全一致；已用
+  `emphasis: .outline` 的源码照常编译（仅废弃告警），视觉随包升级自动切换。
+- **`Role.secondary` 视觉跟随**：别名从 `outline + accent` 改指 `medium + accent`，
+  调用方源码零改动，取消/工具键由"白底描边"变"主题色 50% 中底"。
+- `CaseIterable` 合成无法处理废弃 case，`Emphasis.allCases` 改为手动实现
+  （含全部 5 个 case，outline 排最后）；Catalog 矩阵页 outline 行标注废弃。
+- **需要随包重新目视的调用方**：VideoHero 44 处已迁移按钮（P2/B1–B7）中所有
+  `role: .secondary` / `soft + neutral` 调用点视觉改变。
 
 ### Fixed
 
@@ -11,7 +25,7 @@
   文字被压成多行，按钮纵向鼓胀（实例：VideoHero 场景卡「设置选中文字音色」窄窗口下折成三行）。
   修复后空间不足时整颗按钮保持胶囊形状，宁可溢出不折行。
 
-### Changed
+### Changed（工具链）
 
 - `Scripts/check-api-compatibility.sh` 的判据由 **mangled name** 换成**符号路径**（symbolgraph 的
   `pathComponents` 拼接，形如 `EDSButton.init(_:role:systemImage:action:)`）。
@@ -19,7 +33,7 @@
   而 Apple 在 Xcode 16 → 27 之间把 SwiftUI 拆出了 SwiftUICore，同一个 commit 在两台机器上
   会算出不同的 identifier。实测 CI（Swift 6.1.2 / Xcode 16.4）因此误报 3 条 `EDSButton`
   符号被删除，而那 3 个符号的代码一行未动。
-- 基线文件随之重建为路径口径（449 条）。跨模块扩展符号（本模块对 SwiftUI 类型所做
+- 基线文件随之重建为路径口径（451 条，含 medium 新符号）。跨模块扩展符号（本模块对 SwiftUI 类型所做
   extension 的成员）带 `@` 前缀，其**缺失降级为告警**而不判失败：这批符号的产出数量受
   Apple 模块拆分影响（同一 commit 本机 17 条、CI 15 条），计入失败等于把"Apple 调整了
   模块组织"变成红灯。真正的删除仍会出现在日志与 annotation 里。

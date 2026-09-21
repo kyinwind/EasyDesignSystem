@@ -113,7 +113,7 @@ public struct EDSSecondaryButtonStyle: ButtonStyle {
         EDSButtonVisualBody(
             label: configuration.label,
             isPressed: configuration.isPressed,
-            appearance: EDSButtonAppearance(emphasis: .outline, tone: .accent, size: .regular)
+            appearance: EDSButtonAppearance(emphasis: .medium, tone: .accent, size: .regular)
         )
     }
 }
@@ -149,15 +149,34 @@ public struct EDSButton: View {
     // MARK: 三维维度（正交轴）
 
     /// 视觉分量：这块按钮"多重"，是否抢视觉焦点。
+    ///
+    /// 四档全部用**底色深浅**表达强弱：实心 100% → medium 50% → soft 12% → plain 无底。
+    /// 描边已从按钮体系退役（0.4.0）。
     public enum Emphasis: String, Sendable, Hashable, CaseIterable {
         /// 实心：视觉最强。
         case filled
-        /// 描边：次级。
-        case outline
+        /// 中等色底（50%）+ 深字：次级，介于实心与浅底之间。
+        case medium
         /// 浅色底：较弱。
         case soft
         /// 纯文字：最弱。
         case plain
+
+        /// 旧描边档。0.4.0 起描边退役，渲染为 `medium` 同款视觉。
+        @available(*, deprecated, message: "描边已退役；请改用 medium（渲染视觉相同）。")
+        case outline
+
+        /// 手动实现：Swift 无法为含 `@available(*, deprecated)` case 的枚举
+        /// 自动合成 `allCases`（合成代码引用废弃符号会被拒绝）。
+        /// 顺序 = 强度从强到弱，废弃的 outline 排在最后便于矩阵页对照。
+        /// outline 经 rawValue 构造，避免包内直接引用触发废弃告警。
+        public static var allCases: [Emphasis] {
+            var cases: [Emphasis] = [.filled, .medium, .soft, .plain]
+            if let outline = Emphasis(rawValue: "outline") {
+                cases.append(outline)
+            }
+            return cases
+        }
     }
 
     /// 语义色调：这块按钮"是什么性质"。
@@ -195,7 +214,10 @@ public struct EDSButton: View {
     public enum Role: String, Sendable, Hashable, CaseIterable {
         /// 实心主题色。等价于 `filled + accent + regular`。
         case primary
-        /// 主题色描边。等价于 `outline + accent + regular`。
+        /// 主题色中底（50%）。等价于 `medium + accent + regular`。
+        ///
+        /// 0.4.0 前为 `outline + accent + regular`（白底描边），描边退役后自动
+        /// 跟随到 medium——调用方源码无需改动，视觉随包升级切换。
         case secondary
         /// 主题色浅底。等价于 `soft + accent + regular`。
         case soft
@@ -307,7 +329,7 @@ public struct EDSButton: View {
     /// 三维原语初始化的 `String` 标题版本。
     ///
     /// ```swift
-    /// EDSButton(L("toolbar.refresh"), emphasis: .outline, size: .small) { refresh() }
+    /// EDSButton(L("toolbar.refresh"), emphasis: .medium, size: .small) { refresh() }
     /// ```
     ///
     /// 与 `LocalizedStringKey` 重载并存的安全性说明同上一处。
@@ -375,7 +397,7 @@ extension EDSButton.Role {
         case .primary:
             return EDSButtonAppearance(emphasis: .filled, tone: .accent, size: .regular)
         case .secondary:
-            return EDSButtonAppearance(emphasis: .outline, tone: .accent, size: .regular)
+            return EDSButtonAppearance(emphasis: .medium, tone: .accent, size: .regular)
         case .soft:
             return EDSButtonAppearance(emphasis: .soft, tone: .accent, size: .regular)
         case .danger:
@@ -450,10 +472,14 @@ extension EDSButtonAppearance {
             }
             borderColor = nil
 
-        case .outline:
-            foreground = toneColor
-            background = nil
-            borderColor = toneColor
+        case .medium, .outline:
+            // 0.4.0：描边退役。`outline` 保留为废弃别名，与 medium 同视觉。
+            // 中档 = 各色调 50% 底 + 自适应正文色（textPrimary）：
+            // 50% 彩底上继续用同色字对比度不达标（accent 蓝字在 50% 蓝底约 2:1），
+            // textPrimary 浅色外观近黑、深色外观近白，任何 50% 色底上都可读。
+            foreground = colors.textPrimary
+            background = toneColor.opacity(0.50)
+            borderColor = nil
 
         case .soft:
             // 例外：成功色的浅底 + 同色文字对比度不足（#27B15A 在 12% 浅绿底上约 3.0:1，

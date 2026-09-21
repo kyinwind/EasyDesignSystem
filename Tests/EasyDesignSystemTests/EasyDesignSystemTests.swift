@@ -304,7 +304,7 @@ final class EasyDesignSystemTests: XCTestCase {
         )
         XCTAssertEqual(
             EDSButton.Role.secondary.appearance,
-            EDSButtonAppearance(emphasis: .outline, tone: .accent, size: .regular)
+            EDSButtonAppearance(emphasis: .medium, tone: .accent, size: .regular)
         )
         XCTAssertEqual(
             EDSButton.Role.soft.appearance,
@@ -374,10 +374,71 @@ final class EasyDesignSystemTests: XCTestCase {
         _ = EDSButton(title, role: .secondary) {}
         _ = EDSButton(title, role: .primary, systemImage: "xmark") {}
         _ = EDSButton(title, emphasis: .soft, tone: .danger, size: .small) {}
-        _ = EDSButton(title, emphasis: .outline, size: .large, systemImage: "arrow.clockwise") {}
+        _ = EDSButton(title, emphasis: .medium, size: .large, systemImage: "arrow.clockwise") {}
 
         // 字面量调用仍走 LocalizedStringKey 重载，行为不变
         _ = EDSButton("确定", role: .primary) {}
+    }
+
+    // MARK: - 0.4.0 · medium 档取代 outline（描边退役）
+
+    /// 废弃的 `outline` 与 `medium` 渲染视觉必须完全相等（内部转发保证）。
+    ///
+    /// outline 经 rawValue 构造，避免测试源码直接引用废弃符号触发告警。
+    func testOutlineRendersIdenticallyToMedium() {
+        guard let outline = EDSButton.Emphasis(rawValue: "outline") else {
+            return XCTFail("outline case 应保留（废弃别名），rawValue 构造不应失败")
+        }
+        let tokens = EDSDesignTokens()
+
+        for tone in EDSButton.Tone.allCases {
+            let medium = EDSButtonAppearance(
+                emphasis: .medium, tone: tone, size: .regular
+            ).resolved(tokens: tokens)
+            let legacy = EDSButtonAppearance(
+                emphasis: outline, tone: tone, size: .regular
+            ).resolved(tokens: tokens)
+
+            XCTAssertEqual(medium.foreground, legacy.foreground, "tone=\(tone.rawValue) 文字色不一致")
+            XCTAssertEqual(medium.background, legacy.background, "tone=\(tone.rawValue) 底色不一致")
+            XCTAssertNil(legacy.borderColor, "描边已退役，borderColor 必须为 nil")
+        }
+    }
+
+    /// medium 档视觉规则：50% 色底 + textPrimary 字 + 无描边。
+    ///
+    /// 50% 是杨哥定版（22% 试算与 soft 12% 区分不开）；文字不用同色字是
+    /// 因为同色字在 50% 彩底上对比度不达 WCAG（accent 约 2:1）。
+    func testMediumResolvesToHalfToneFillWithPrimaryText() {
+        let tokens = EDSDesignTokens()
+
+        for tone in EDSButton.Tone.allCases {
+            let visual = EDSButtonAppearance(
+                emphasis: .medium, tone: tone, size: .regular
+            ).resolved(tokens: tokens)
+
+            let toneColor: Color
+            switch tone {
+            case .accent:  toneColor = tokens.colors.primary
+            case .neutral: toneColor = Color.primary
+            case .danger:  toneColor = tokens.colors.danger
+            case .success: toneColor = tokens.colors.success
+            case .warning: toneColor = tokens.colors.warning
+            }
+
+            XCTAssertEqual(visual.background, toneColor.opacity(0.50), "tone=\(tone.rawValue)")
+            XCTAssertEqual(visual.foreground, tokens.colors.textPrimary, "tone=\(tone.rawValue)")
+            XCTAssertNil(visual.borderColor)
+        }
+    }
+
+    /// allCases 手动实现必须包含全部 5 个 case（含废弃 outline）。
+    func testEmphasisAllCasesIncludeMediumAndDeprecatedOutline() {
+        let all = EDSButton.Emphasis.allCases.map(\.rawValue)
+        XCTAssertEqual(
+            Set(all),
+            ["filled", "medium", "soft", "plain", "outline"]
+        )
     }
 
     private func decodeFixture(_ name: String) throws -> EDSDesignTokens {

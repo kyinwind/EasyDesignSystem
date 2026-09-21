@@ -3,7 +3,7 @@
 # 判据是**符号路径**（symbolgraph 的 pathComponents 拼接），不是 mangled name。
 # 原因：mangled name 会把外部模块名编进去（如 7SwiftUI18LocalizedStringKeyV、
 # 7SwiftUI4ViewRz），而 Apple 在 Xcode 16 → 27 之间把 SwiftUI 拆出了 SwiftUICore，
-# 同一个 commit 在不同 Xcode 上会算出不同 identifier，产生本地过、CI 挂的假阳性。
+# 同一个 commit 在不同 Xcode 上会算出不同 identifier，产生本地过 CI 挂的假阳性。
 #
 # 本模块对 SwiftUI 类型所做扩展的符号带 '@' 前缀，与本体符号区分。
 #
@@ -46,8 +46,10 @@ EDSBadge.init(_:style:)
 EDSBadge.init(verbatim:style:)
 EDSButton
 EDSButton.Emphasis
+EDSButton.Emphasis.allCases
 EDSButton.Emphasis.filled
 EDSButton.Emphasis.init(rawValue:)
+EDSButton.Emphasis.medium
 EDSButton.Emphasis.outline
 EDSButton.Emphasis.plain
 EDSButton.Emphasis.soft
