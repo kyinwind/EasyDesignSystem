@@ -560,7 +560,7 @@ EDSToggle(isOn: $isEnabled, label: "启用自动处理")
 ```swift
 EDSButton("忽略并删除", emphasis: .soft, tone: .danger) {}
 EDSButton("更多", emphasis: .plain, systemImage: "ellipsis") {}
-EDSButton("刷新", emphasis: .outline, size: .small) {}
+EDSButton("刷新", emphasis: .medium, size: .small) {}
 EDSButton("开始处理", emphasis: .filled, size: .large) {}
 ```
 

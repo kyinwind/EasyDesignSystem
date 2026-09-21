@@ -2,14 +2,14 @@
 
 本项目遵循语义化版本管理。`1.0.0` 前，patch 版本用于向后兼容的新增、可见性提升和 Bug 修复；minor 版本用于有架构意义的节点、行为变更或新的对外模型。`1.0.0` 后，新增公开 API 按标准语义化版本管理进入 minor 版本。
 
-## Unreleased
+## 0.4.1 — 2026-09-22
 
 ### Added
 
 - **`Role.normal`**：灰底次级操作快捷方式，等价于 `soft + neutral + regular`。
   灰底按钮是最常见的重复场景（工具栏"检测对话/导出/打开目录"一类），收进 Role 表。
 
-### Changed（未定稿，目视迭代中）
+### Changed
 
 - **`filled` 彩色档文字统一白色**：`success` / `warning` 实心档从 `textPrimary` 改为
   白色，与 `accent` / `danger` 实心档观感一致（`.done` 随之为白字）。
