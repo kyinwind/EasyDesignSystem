@@ -68,6 +68,7 @@ public struct EDSButtonShowcase: View {
             HStack(spacing: theme.spacing.sm) {
                 EDSButton("主要操作", role: .primary) {}
                 EDSButton("次要操作", role: .secondary) {}
+                EDSButton("常规灰底", role: .normal) {}
                 EDSButton("轻量操作", role: .soft) {}
                 EDSButton("危险操作", role: .danger) {}
                 EDSButton("已完成", role: .done) {}

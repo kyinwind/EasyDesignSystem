@@ -5,6 +5,12 @@ import AppKit
 
 enum EDSPlatformColorBridge {
     static func hexString(for color: Color) -> String? {
+        guard let c = sRGBComponents(for: color) else { return nil }
+        return makeHex(red: c.red, green: c.green, blue: c.blue)
+    }
+
+    /// 取 sRGB 分量。macOS 侧固定在浅色外观解析，保证结果确定性（供测试对齐）。
+    static func sRGBComponents(for color: Color) -> (red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat)? {
         var resolvedColor: NSColor?
         NSAppearance(named: .aqua)?.performAsCurrentDrawingAppearance {
             resolvedColor = NSColor(color).usingColorSpace(.sRGB)
@@ -12,10 +18,24 @@ enum EDSPlatformColorBridge {
         guard let resolvedColor = resolvedColor ?? NSColor(color).usingColorSpace(.sRGB) else {
             return nil
         }
-        return makeHex(
-            red: resolvedColor.redComponent,
-            green: resolvedColor.greenComponent,
-            blue: resolvedColor.blueComponent
+        return (
+            resolvedColor.redComponent,
+            resolvedColor.greenComponent,
+            resolvedColor.blueComponent,
+            resolvedColor.alphaComponent
+        )
+    }
+
+    /// 向黑色等比压缩 RGB（multiplier ∈ 0…1，1 = 原色）。
+    /// 用于按钮 medium 档"比 tone 更深一档"的文字色。
+    /// 注意：按浅色外观解析，深色外观下仍是深色——与 tone 静态 hex 的现状一致。
+    static func darkened(_ color: Color, by multiplier: CGFloat) -> Color? {
+        guard let c = sRGBComponents(for: color) else { return nil }
+        return Color(
+            red: c.red * multiplier,
+            green: c.green * multiplier,
+            blue: c.blue * multiplier,
+            opacity: c.alpha
         )
     }
 }
@@ -44,6 +64,12 @@ import UIKit
 
 enum EDSPlatformColorBridge {
     static func hexString(for color: Color) -> String? {
+        guard let c = sRGBComponents(for: color) else { return nil }
+        return makeHex(red: c.red, green: c.green, blue: c.blue)
+    }
+
+    /// 取 sRGB 分量。UIKit 侧固定按浅色外观解析，保证结果确定性（供测试对齐）。
+    static func sRGBComponents(for color: Color) -> (red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat)? {
         let resolvedColor = UIColor(color).resolvedColor(
             with: UITraitCollection(userInterfaceStyle: .light)
         )
@@ -54,7 +80,20 @@ enum EDSPlatformColorBridge {
         guard resolvedColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
             return nil
         }
-        return makeHex(red: red, green: green, blue: blue)
+        return (red, green, blue, alpha)
+    }
+
+    /// 向黑色等比压缩 RGB（multiplier ∈ 0…1，1 = 原色）。
+    /// 用于按钮 medium 档"比 tone 更深一档"的文字色。
+    /// 注意：按浅色外观解析，深色外观下仍是深色——与 tone 静态 hex 的现状一致。
+    static func darkened(_ color: Color, by multiplier: CGFloat) -> Color? {
+        guard let c = sRGBComponents(for: color) else { return nil }
+        return Color(
+            red: c.red * multiplier,
+            green: c.green * multiplier,
+            blue: c.blue * multiplier,
+            opacity: c.alpha
+        )
     }
 }
 

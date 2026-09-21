@@ -553,7 +553,7 @@ EDSToggle(isOn: $isEnabled, label: "启用自动处理")
 
 | 维度 | 取值 | 含义 |
 | --- | --- | --- |
-| `Emphasis` | `.filled` `.outline` `.soft` `.plain` | 视觉分量——这块按钮“多重” |
+| `Emphasis` | `.filled` `.medium` `.soft` `.plain`（`.outline` 已废弃，渲染同 `.medium`） | 视觉分量——这块按钮“多重” |
 | `Tone` | `.accent` `.neutral` `.danger` `.success` `.warning` | 语义色调——这块按钮“是什么性质” |
 | `Size` | `.small`(28) `.regular`(34) `.large`(44) | 尺寸档位 |
 
@@ -569,10 +569,11 @@ EDSButton("开始处理", emphasis: .filled, size: .large) {}
 | `Role` | 等价于 |
 | --- | --- |
 | `.primary` | `filled` + `accent` + `regular` |
-| `.secondary` | `outline` + `accent` + `regular` |
+| `.secondary` | `medium` + `accent` + `regular` |
 | `.soft` | `soft` + `accent` + `regular` |
 | `.danger` | `filled` + `danger` + `regular` |
 | `.done` | `filled` + `success` + `regular`，并自动补 `checkmark` 图标 |
+| `.normal` | `soft` + `neutral` + `regular`（灰底次级操作，工具栏常用档） |
 
 两种写法汇入同一份渲染实现，可以在同一页面里混用。需要自定义预设时，用 `EDSButtonAppearance` 组合三维后自行封装。
 

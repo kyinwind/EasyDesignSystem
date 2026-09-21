@@ -316,6 +316,25 @@ final class EasyDesignSystemTests: XCTestCase {
         )
     }
 
+    /// `.normal` 的默认外观契约：浅灰底 + 深字 + 标准尺寸。
+    ///
+    /// 杨哥定版 2026-09-22：灰底次级按钮是最常见的重复场景（工具栏
+    /// "检测对话/导出/打开目录"一类），收进 Role 快捷方式表。
+    func testNormalRoleResolvesToSoftNeutral() {
+        let appearance = EDSButton.Role.normal.appearance
+        XCTAssertEqual(appearance.emphasis, .soft)
+        XCTAssertEqual(appearance.tone, .neutral)
+        XCTAssertEqual(appearance.size, .regular)
+    }
+
+    /// allCases 必须包含 normal（Role 表 6 条）。
+    func testRoleAllCasesIncludeNormal() {
+        XCTAssertEqual(
+            Set(EDSButton.Role.allCases.map(\.rawValue)),
+            ["primary", "secondary", "soft", "danger", "done", "normal"]
+        )
+    }
+
     // MARK: - 0.3.1 · A1 主题色单一来源
 
     /// 只改 `primary` 时，所有"跟随主题色"的读取点都必须跟着变。
@@ -405,11 +424,12 @@ final class EasyDesignSystemTests: XCTestCase {
         }
     }
 
-    /// medium 档视觉规则：50% 色底 + textPrimary 字 + 无描边。
+    /// medium 档视觉规则：25% 色底 + "深一档的同色系"文字（neutral 除外）+ 无描边。
     ///
-    /// 50% 是杨哥定版（22% 试算与 soft 12% 区分不开）；文字不用同色字是
-    /// 因为同色字在 50% 彩底上对比度不达 WCAG（accent 约 2:1）。
-    func testMediumResolvesToHalfToneFillWithPrimaryText() {
+    /// 25% 是杨哥定版（2026-09-22；50% 目视偏重，试算 22% 与 soft 12% 区分不开）；
+    /// 文字同色系且压深 30% 是杨哥定版（2026-09-22；纯黑字丢失色彩身份，
+    /// 纯 tone 字则与 soft 拉不开文字层次）。neutral 无彩度，维持 textPrimary。
+    func testMediumResolvesToQuarterToneFillWithDarkenedToneText() {
         let tokens = EDSDesignTokens()
 
         for tone in EDSButton.Tone.allCases {
@@ -426,10 +446,34 @@ final class EasyDesignSystemTests: XCTestCase {
             case .warning: toneColor = tokens.colors.warning
             }
 
-            XCTAssertEqual(visual.background, toneColor.opacity(0.50), "tone=\(tone.rawValue)")
-            XCTAssertEqual(visual.foreground, tokens.colors.textPrimary, "tone=\(tone.rawValue)")
+            XCTAssertEqual(visual.background, toneColor.opacity(0.25), "tone=\(tone.rawValue)")
+
+            let expectedForeground: Color = tone == .neutral
+                ? tokens.colors.textPrimary
+                : EDSPlatformColorBridge.darkened(toneColor, by: 0.7) ?? tokens.colors.textPrimary
+            XCTAssertEqual(visual.foreground, expectedForeground, "tone=\(tone.rawValue)")
+
             XCTAssertNil(visual.borderColor)
         }
+    }
+
+    /// medium 文字色必须真的比 tone 深一档（压深 ≠ 原色 ≠ 黑），防回归成纯 tone 或纯黑。
+    func testMediumDarkenedTextIsBetweenToneAndBlack() throws {
+        let tokens = EDSDesignTokens()
+        let pureTone = try XCTUnwrap(
+            EDSPlatformColorBridge.sRGBComponents(for: tokens.colors.primary)
+        )
+        let darkened = try XCTUnwrap(
+            EDSPlatformColorBridge.sRGBComponents(
+                for: EDSPlatformColorBridge.darkened(tokens.colors.primary, by: 0.7)!
+            )
+        )
+        // 总亮度严格下降（逐通道比较不行：如纯蓝的 red 通道本来就是 0）
+        let pureSum = pureTone.red + pureTone.green + pureTone.blue
+        let darkenedSum = darkened.red + darkened.green + darkened.blue
+        XCTAssertLessThan(darkenedSum, pureSum)
+        // 但没有压成纯黑
+        XCTAssertGreaterThan(darkenedSum, 0)
     }
 
     /// allCases 手动实现必须包含全部 5 个 case（含废弃 outline）。

@@ -58,6 +58,7 @@ EDSButton.Role.appearance
 EDSButton.Role.danger
 EDSButton.Role.done
 EDSButton.Role.init(rawValue:)
+EDSButton.Role.normal
 EDSButton.Role.primary
 EDSButton.Role.secondary
 EDSButton.Role.soft

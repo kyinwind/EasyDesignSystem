@@ -150,12 +150,12 @@ public struct EDSButton: View {
 
     /// 视觉分量：这块按钮"多重"，是否抢视觉焦点。
     ///
-    /// 四档全部用**底色深浅**表达强弱：实心 100% → medium 50% → soft 12% → plain 无底。
+    /// 四档全部用**底色深浅**表达强弱：实心 100% → medium 25% → soft 12% → plain 无底。
     /// 描边已从按钮体系退役（0.4.0）。
     public enum Emphasis: String, Sendable, Hashable, CaseIterable {
         /// 实心：视觉最强。
         case filled
-        /// 中等色底（50%）+ 深字：次级，介于实心与浅底之间。
+        /// 中等色底（25%）+ 深字：次级，介于实心与浅底之间。
         case medium
         /// 浅色底：较弱。
         case soft
@@ -214,7 +214,7 @@ public struct EDSButton: View {
     public enum Role: String, Sendable, Hashable, CaseIterable {
         /// 实心主题色。等价于 `filled + accent + regular`。
         case primary
-        /// 主题色中底（50%）。等价于 `medium + accent + regular`。
+        /// 主题色中底（25%）。等价于 `medium + accent + regular`。
         ///
         /// 0.4.0 前为 `outline + accent + regular`（白底描边），描边退役后自动
         /// 跟随到 medium——调用方源码无需改动，视觉随包升级切换。
@@ -229,6 +229,11 @@ public struct EDSButton: View {
         /// 作为"点击进去有内容"的入口体量不足。实心绿同时解决了与 `EDSBadge(.success)`
         /// 的体量混淆——两者不再只是底色深浅之差。
         case done
+        /// 常规灰底（12% 灰底 + 深字）。等价于 `soft + neutral + regular`。
+        ///
+        /// 灰底次级按钮是最常见的重复场景（工具栏"检测对话/导出/打开目录"一类），
+        /// 杨哥定版 2026-09-22 收进 Role 表。
+        case normal
     }
 
     private let appearance: EDSButtonAppearance
@@ -364,7 +369,7 @@ public struct EDSButton: View {
         switch role {
         case .done:
             return "checkmark"
-        case .primary, .secondary, .soft, .danger:
+        case .primary, .secondary, .soft, .danger, .normal:
             return nil
         }
     }
@@ -404,6 +409,8 @@ extension EDSButton.Role {
             return EDSButtonAppearance(emphasis: .filled, tone: .danger, size: .regular)
         case .done:
             return EDSButtonAppearance(emphasis: .filled, tone: .success, size: .regular)
+        case .normal:
+            return EDSButtonAppearance(emphasis: .soft, tone: .neutral, size: .regular)
         }
     }
 }
@@ -465,20 +472,27 @@ extension EDSButtonAppearance {
                 foreground = .white
                 background = toneColor
             case .success, .warning:
-                // 这两个色调此前不存在实心档用例，按底色亮度选取可读文字色：
-                // 白字在 #27B15A / #F9B135 上对比度仅约 2.8:1 / 1.9:1，不达 WCAG AA。
-                foreground = colors.textPrimary
+                // 杨哥定版（2026-09-22）：彩色实心档（success/warning）文字一律白色，
+                // 与 accent/danger 实心档观感统一；textPrimary 近黑字目视偏重。
+                // 白字在 #27B15A / #F9B135 上对比度仅约 2.8:1 / 1.9:1、不达 WCAG AA
+                // ——刻意接受的取舍，主题调浅这两个色时需回评。
+                foreground = .white
                 background = toneColor
             }
             borderColor = nil
 
         case .medium, .outline:
             // 0.4.0：描边退役。`outline` 保留为废弃别名，与 medium 同视觉。
-            // 中档 = 各色调 50% 底 + 自适应正文色（textPrimary）：
-            // 50% 彩底上继续用同色字对比度不达标（accent 蓝字在 50% 蓝底约 2:1），
-            // textPrimary 浅色外观近黑、深色外观近白，任何 50% 色底上都可读。
-            foreground = colors.textPrimary
-            background = toneColor.opacity(0.50)
+            // 中档 = 各色调 25% 底 + "深一档的同色系"文字（杨哥定版 2026-09-22）：
+            // 底色与文字同色系，色彩身份贯穿 filled/medium/soft/plain 四档；
+            // 文字比 tone 再压深 30%（RGB×0.7），25% 色底上对比度优于 soft 的纯 tone 字，
+            // 且与 soft 拉开"文字深浅"这一维层次。neutral 无彩度，维持 textPrimary。
+            // 注意：darkened 按浅色外观解析（与 tone 静态 hex 的现状一致），
+            // 深色外观的适配是所有静态 tone 色的共同欠账，不单独欠在这里。
+            foreground = tone == .neutral
+                ? colors.textPrimary
+                : EDSPlatformColorBridge.darkened(toneColor, by: 0.7) ?? colors.textPrimary
+            background = toneColor.opacity(0.25)
             borderColor = nil
 
         case .soft:
