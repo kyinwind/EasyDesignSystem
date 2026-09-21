@@ -267,7 +267,7 @@ private struct EDSEasyDesignModifier: ViewModifier {
             .modifier(EDSEasyWidthModifier(width: recipe.width))
             .modifier(EDSEasySurfaceModifier(recipe: recipe, tokens: tokens))
             .environment(\.edsTheme, tokens)
-            .tint(tokens.colors.accent)
+            .tint(tokens.colors.primary)
             .edsFont(.body, tokens: tokens.typography)
             .foregroundStyle(tokens.colors.textPrimary)
     }

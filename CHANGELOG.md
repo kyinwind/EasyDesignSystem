@@ -2,7 +2,73 @@
 
 本项目遵循语义化版本管理。`1.0.0` 前，patch 版本用于向后兼容的新增、可见性提升和 Bug 修复；minor 版本用于有架构意义的节点、行为变更或新的对外模型。`1.0.0` 后，新增公开 API 按标准语义化版本管理进入 minor 版本。
 
-## Unreleased
+## 0.3.1
+
+### Added
+
+- `EDSButton` 新增两个 `String` 标题初始化（预设角色版与三维原语版）。此前标题参数只接受
+  `LocalizedStringKey`，自带本地化函数（返回 `String`）的 App 只能退回 `label:` 闭包写法。
+  现在 `EDSButton(L("button.cancel"), role: .secondary) {}` 可直接编译。`String` 与
+  `LocalizedStringKey` 重载并存安全：字面量调用稳定命中后者，不产生歧义。
+- `EDSColorTokens` 新增派生色 `primarySoft`（`primary` 的 12% 透明版本）。包内"主题色浅底"
+  统一改读它。
+
+### Changed
+
+- **行为变更 · 主题色收敛为单一来源 `primary`。**
+  这是对既有缺陷的修复：包内对"主题色"的读取此前是**分裂**的——浅底档按钮的**底色**读
+  `accentSoft`（→ `accent`），**文字**读 `primary`；`EDSSidebarItemButton` 选中态与
+  `EDSEasyDesign` 的全局 `.tint()` 也读 `accent`。后果是 App 只设置 `primary` 时，浅底档
+  按钮渲染成"12% 蓝底 + 橙字"，侧边栏选中项与全局 tint 停留在蓝色。
+  0.3.1 起以下读取点全部改为 `primary`：
+  - `EDSColorTokens.accentSoft` → 等价于 `primarySoft`（不再跟随 `accent`）
+  - `EDSSidebarItemButton` 的选中底色与选中字色
+  - `EDSEasyDesign` 的全局 `.tint()`
+  - 按钮浅底档（`emphasis: .soft`）在 `tone: .accent` 下的底色
+- `Scripts/check-api-compatibility.sh` 加固两处：
+  - 对非本模块符号做前缀归一化（`s:<len><外部模块名>` → `s:EXTERNAL_`）。跨模块扩展符号的
+    标识符首段是被扩展类型所属的外部模块，Xcode 16.4 → 27 之间 SwiftUI 拆出 SwiftUICore
+    会改变该前缀——业务代码一字未改却被判"公开 API 被删"，是此前 CI 与本地结论不一致的根源。
+    归一化后其余部分仍严格比对。
+  - 基线缺失/符号图未生成时明确报根因（附 symbolgraph 清单），不再把整份基线误报成"已删除"。
+- `Scripts/run-ui-tests.sh` 去掉 `-quiet`：此前失败时 CI 日志只剩一句 `Failing tests:`，
+  连审计报的问题描述都看不到，无从定位。
+- `Examples/PlatformCatalog/UITests/EDSPlatformCatalogUITests.swift` 的无障碍审计改用带
+  handler 的重载，把问题类型与**出问题的元素**一起打印（`EDS_A11Y_AUDIT_ISSUE | …`）。
+
+### Deprecated
+
+- `EDSColorTokens.accent`：**包内不再读取，写它不会有任何效果。** 保留字段仅为兼容既有主题
+  JSON 与 `init(primary:accent:…)` 调用方，删除会造成 API 断裂。**要变更主题色请改 `primary`。**
+- `EDSColorTokens.accentSoft`：保留为 `primarySoft` 的别名，新代码请用 `primarySoft`。
+
+### Fixed
+
+- 修复 `EDSThemeBar`（Examples 主题预览栏）导致 iPhone 侧 UI 测试
+  `testAdaptiveCatalogPassesSystemAccessibilityAudit` 确定性失败的问题（`2c554e04` 之后的 CI 红灯）：
+  - 栏内文字由 `typography.captionStrong` / `monoCaption` 改用 `edsFont(...)`。前者返回
+    `.system(size:)` 固定字号，**不参与 Dynamic Type 缩放**，会被 `.dynamicType` 审计判为
+    "Dynamic Type font sizes are unsupported"。
+  - 栏内不再使用 `ViewThatFits`。实测只要内容被包进 `ViewThatFits`，栏内**每一个** Text
+    （包括完全不加字号修饰的裸 `Text`）都会被判 "partially unsupported"；换成普通
+    `HStack` / `VStack` 后同样内容 0 问题。属审计误判，与字体无关。
+  - 移除 `entry.detail` 详情行（`monoCaption` + `lineLimit(1)` 稳定被判 `Text clipped`）。
+    主题名 Picker 与语义色色块已足够表达当前主题。
+  - iPad 组审计项不含 `.dynamicType`，所以此前"iPhone 必挂、iPad 通过"。
+
+### Compatibility
+
+- 无破坏性变更，无公开符号被移除（`accent` 字段与四个旧 `ButtonStyle` 均保留）。
+- 使用 `applyPreset(_:)` 或内置预设的 App：**零视觉变化**。三个预设的 `primary` 与 `accent`
+  本来同值（`#3185FF` / `#FF6B00` / `#8B5CF6`），收敛读取点不改变它们的外观。
+- 只设置 `primary` 的 App：蓝色残留被修正为跟随 `primary`，属缺陷修复。
+- ⚠️ 只设置 `accent` 的 App：**该改动会静默失效**，需把赋值改到 `primary`。
+
+### Docs
+
+- 新增 `docs/20260921CI失败排查与修复.md`：CI 历史对照、根因对照实验、复现命令与
+  `-only-testing` 三段式陷阱。
+- 新增 `docs/20260921EDS0.3.1修复方案与开发计划.md`。
 
 ## 0.3.0
 

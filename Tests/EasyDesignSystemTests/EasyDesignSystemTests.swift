@@ -316,6 +316,70 @@ final class EasyDesignSystemTests: XCTestCase {
         )
     }
 
+    // MARK: - 0.3.1 · A1 主题色单一来源
+
+    /// 只改 `primary` 时，所有"跟随主题色"的读取点都必须跟着变。
+    ///
+    /// 固化 2026-09-21 的 A1 修复。修复前包内读取是分裂的：浅底档按钮的
+    /// **底色**读 `accentSoft`（→ `accent`），**文字**读 `primary`，
+    /// 于是 VideoHero 只设 `primary = .orange` 时渲染成"12% 蓝底 + 橙字"；
+    /// 侧边栏选中态与全局 `.tint()` 也停留在蓝色。
+    ///
+    /// 这条断言用"primary 与 accent 取**不同**颜色"来区分两条读取路径——
+    /// 若哪天有人把 `accentSoft` 改回读 `accent`，本测试立刻失败。
+    func testThemeColorReadsFollowPrimaryNotAccent() {
+        let orange = Color(hexRGB: "#FF6B00")
+        let blue = Color(hexRGB: "#3185FF")
+
+        var tokens = EDSDesignTokens()
+        tokens.colors.primary = orange
+        tokens.colors.accent = blue          // 保持默认蓝，模拟"只改了 primary"
+
+        // 派生浅底色跟随 primary
+        XCTAssertEqual(tokens.colors.primarySoft, orange.opacity(0.12))
+        XCTAssertEqual(tokens.colors.accentSoft, tokens.colors.primarySoft)
+        XCTAssertEqual(tokens.colors.accentSoft.toHex(), "#FF6B00")
+
+        // 浅底档按钮：底色与文字必须同源，否则就是那个"蓝底橙字"的历史 bug
+        let soft = EDSButtonAppearance(emphasis: .soft, tone: .accent, size: .regular)
+        let visual = soft.resolved(tokens: tokens)
+        XCTAssertEqual(visual.background, orange.opacity(0.12))
+        XCTAssertEqual(visual.foreground, orange)
+    }
+
+    /// 预设路径不受 A1 影响：三个内置预设的 primary 与 accent 取值仍然相同。
+    ///
+    /// 这是"用 `applyPreset` 的 App 零视觉变化"这一承诺的可执行版本。
+    func testBuiltInPresetsKeepPrimaryAndAccentInSync() {
+        for preset in EDSPresetTheme.allPresets {
+            XCTAssertEqual(
+                preset.tokens.colors.primary.toHex(),
+                preset.tokens.colors.accent.toHex(),
+                "预设 \(preset.id) 的 primary 与 accent 不再同值，A1 修复会改变其视觉"
+            )
+        }
+    }
+
+    // MARK: - 0.3.1 · A2 String 标题重载
+
+    /// `String` 标题重载可编译，且解析出的外观与对应 `Role` 一致。
+    ///
+    /// 背景：App 自有本地化函数（如 VideoHero 的 `L(_:_:)`）返回 `String`，
+    /// 0.3.1 之前 `EDSButton(L("x"), role: .secondary) {}` 直接编译失败
+    /// （`cannot convert value of type 'String' to expected argument type 'LocalizedStringKey'`）。
+    /// 本测试的存在即"该写法可编译"的证据。
+    func testStringTitleInitializersCompile() {
+        let title: String = "取消"
+
+        _ = EDSButton(title, role: .secondary) {}
+        _ = EDSButton(title, role: .primary, systemImage: "xmark") {}
+        _ = EDSButton(title, emphasis: .soft, tone: .danger, size: .small) {}
+        _ = EDSButton(title, emphasis: .outline, size: .large, systemImage: "arrow.clockwise") {}
+
+        // 字面量调用仍走 LocalizedStringKey 重载，行为不变
+        _ = EDSButton("确定", role: .primary) {}
+    }
+
     private func decodeFixture(_ name: String) throws -> EDSDesignTokens {
         let url = try XCTUnwrap(
             Bundle.module.url(forResource: name, withExtension: "json")

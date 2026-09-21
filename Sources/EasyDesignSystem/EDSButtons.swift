@@ -246,6 +246,30 @@ public struct EDSButton: View {
         }
     }
 
+    /// `String` 标题版本的预设角色初始化。
+    ///
+    /// 供自带本地化系统、函数返回 `String` 的 App 直接使用：
+    ///
+    /// ```swift
+    /// EDSButton(L("button.cancel"), role: .secondary) { onCancel() }
+    /// ```
+    ///
+    /// 与 `LocalizedStringKey` 重载并存是安全的：字面量调用（如 `EDSButton("确定")`）
+    /// 由 Swift 稳定解析到 `LocalizedStringKey` 版本，不会产生歧义——
+    /// 与 `EDSBadge` 的双重载策略一致。
+    ///
+    /// - Note: 传入的 `String` 会被当作本地化 key 再查一次表。若 App 的
+    ///   `L()` 已经返回翻译好的文案，查表未命中时 SwiftUI 会原样显示该字符串，
+    ///   因此结果正确，只是多一次无害的查找。
+    public init(
+        _ title: String,
+        role: Role = .primary,
+        systemImage: String? = nil,
+        action: @escaping () -> Void
+    ) {
+        self.init(LocalizedStringKey(title), role: role, systemImage: systemImage, action: action)
+    }
+
     /// 三维原语初始化。
     ///
     /// `emphasis` **刻意不给默认值**：一旦给出，`EDSButton("确定") { }` 会同时匹配
@@ -273,6 +297,31 @@ public struct EDSButton: View {
                 AnyView(Text(title))
             }
         }
+    }
+
+    /// 三维原语初始化的 `String` 标题版本。
+    ///
+    /// ```swift
+    /// EDSButton(L("toolbar.refresh"), emphasis: .outline, size: .small) { refresh() }
+    /// ```
+    ///
+    /// 与 `LocalizedStringKey` 重载并存的安全性说明同上一处。
+    public init(
+        _ title: String,
+        emphasis: Emphasis,
+        tone: Tone = .accent,
+        size: Size = .regular,
+        systemImage: String? = nil,
+        action: @escaping () -> Void
+    ) {
+        self.init(
+            LocalizedStringKey(title),
+            emphasis: emphasis,
+            tone: tone,
+            size: size,
+            systemImage: systemImage,
+            action: action
+        )
     }
 
     public var body: some View {
@@ -365,7 +414,7 @@ extension EDSButtonAppearance {
         // 浅底档的背景色：各色调的 12% 透明版本
         let toneSoftColor: Color
         switch tone {
-        case .accent:  toneSoftColor = colors.accentSoft
+        case .accent:  toneSoftColor = colors.primarySoft
         case .neutral: toneSoftColor = Color.primary.opacity(0.12)
         case .danger:  toneSoftColor = colors.dangerSoft
         case .success: toneSoftColor = colors.successSoft

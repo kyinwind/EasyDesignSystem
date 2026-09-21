@@ -194,8 +194,18 @@ final class EDSPlatformCatalogUITests: XCTestCase {
             ? [.textClipped, .hitRegion, .sufficientElementDescription, .trait]
             : [.dynamicType, .textClipped, .hitRegion, .sufficientElementDescription, .trait]
         #endif
-        try app.performAccessibilityAudit(
-            for: auditTypes
-        )
+        // 用带 handler 的重载：把每一个审计问题连同**出问题的元素**打到日志里。
+        // 否则 CI 上只会留下 "TEST FAILED" 一句汇总（`xcodebuild -quiet` 下
+        // 连 audit 的 compactDescription 都不显示），根本无从定位。
+        // handler 返回 false = 不忽略，问题照旧算测试失败。
+        try app.performAccessibilityAudit(for: auditTypes) { issue in
+            print(
+                "EDS_A11Y_AUDIT_ISSUE"
+                + " | auditType=\(issue.auditType)"
+                + " | description=\(issue.compactDescription)"
+                + " | element=\(issue.element?.debugDescription ?? "<none>")"
+            )
+            return false
+        }
     }
 }

@@ -297,7 +297,7 @@ public struct EDSDesignSystemGallery: View {
                                 .font(EDSTheme.shared.typography.body)
                         }
 
-                        EDSCard(background: EDSTheme.shared.colors.accentSoft) {
+                        EDSCard(background: EDSTheme.shared.colors.primarySoft) {
                             Text("显式传入 background 时才绘制背景和圆角。")
                                 .font(EDSTheme.shared.typography.body)
                         }

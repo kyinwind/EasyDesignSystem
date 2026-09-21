@@ -222,6 +222,10 @@ public struct EDSPresetTheme: Identifiable, Hashable, Sendable {
     }
 
     // MARK: - 内置预设
+    //
+    // 三个预设都同时写了 `primary` 与 `accent` 且取同值。0.3.1 起包内只读
+    // `primary`，这几行 `accent` 赋值纯属兼容保留（让仍在读该字段的老调用方
+    // 不至于拿到与主题不符的值）。新预设只需写 `primary`。
 
     /// 默认蓝色主题
     ///

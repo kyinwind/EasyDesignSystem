@@ -28,12 +28,14 @@ public struct EDSCatalogThemeEntry: Identifiable, Hashable, Sendable {
         self.preset = preset
     }
 
-    /// 5 个语义色，供顶部栏色块预览。顺序固定：primary / accent / success / warning / danger。
+    /// 当前主题的 4 个语义色，供顶部栏色块预览。顺序固定：primary / success / warning / danger。
+    ///
+    /// 不含 `accent`：0.3.1 起该字段已废弃、包内不再读取，展示它只会让人
+    /// 误以为还有第二个主题色。
     public var swatchColors: [Color] {
         let colors = preset.tokens.colors
         return [
             colors.primary,
-            colors.accent,
             colors.success,
             colors.warning,
             colors.danger
@@ -162,7 +164,7 @@ public enum EDSCatalogThemeCatalog {
 
 // MARK: - EDSThemeBar
 
-/// 顶部主题选择栏：一个下拉选择器 + 当前主题的 5 色色块。
+/// 顶部主题选择栏：一个下拉选择器 + 当前主题的 4 色色块。
 @MainActor
 public struct EDSThemeBar: View {
     @Binding private var selectionID: String
@@ -172,45 +174,56 @@ public struct EDSThemeBar: View {
     }
 
     public var body: some View {
+        // 这个栏踩过两个坑，都跟"文字"有关，改之前先看这里：
+        //
+        // ① **不要用 `ViewThatFits`**。实测（iOS 17 模拟器，
+        //    `performAccessibilityAudit(for: .dynamicType)`）：只要内容被包进
+        //    `ViewThatFits`，栏内**每一个** Text —— 包括完全不加字号修饰的裸
+        //    `Text("PA")` —— 都会被判 "Dynamic Type font sizes are partially
+        //    unsupported"；换成普通 HStack/VStack 后同样内容 0 问题。
+        //    这是审计对 ViewThatFits 度量期文本的误判，跟字体无关：
+        //    换语义字号、去掉 `.fixedSize()` 都无效。所以栏内不做"按宽度逐级降级"。
+        //
+        // ② **字号必须走 `edsFont`**。`typography.captionStrong` / `monoCaption`
+        //    返回 `.system(size:)` 固定字号，不参与 Dynamic Type 缩放，会被判
+        //    "Dynamic Type font sizes are unsupported"（注意是 unsupported，
+        //    不是 ① 的 partially unsupported，两者成因不同）。
+        //
+        // 另外原先那行 `entry.detail`（"包内预设 · #3185FF"）已移除：
+        // `monoCaption` + `lineLimit(1)` 的组合无论独占一行与否，稳定被判
+        // "Text clipped"。主题名 Picker 与五色色块已足够表达当前主题，
+        // 少一行也换回更紧凑的高度。
         HStack(spacing: 12) {
             Text("预览主题")
-                .font(EDSTheme.shared.typography.captionStrong)
+                .edsFont(.captionStrong)
                 .foregroundStyle(EDSTheme.shared.colors.textSecondary)
-                .fixedSize()
-
-            Picker("预览主题", selection: $selectionID) {
-                Section("包内预设") {
-                    ForEach(EDSCatalogThemeCatalog.builtIn) { entry in
-                        Text(entry.name).tag(entry.id)
-                    }
-                }
-                Section("包外自定义示例") {
-                    ForEach(EDSCatalogThemeCatalog.custom) { entry in
-                        Text(entry.name).tag(entry.id)
-                    }
-                }
-            }
-            .labelsHidden()
-            .pickerStyle(.menu)
-            .fixedSize()
-            .accessibilityIdentifier("catalog.theme.picker")
-
+            themePicker
             swatches
-
-            Spacer(minLength: 8)
-
-            if let entry = EDSCatalogThemeCatalog.entry(id: selectionID) {
-                Text(entry.detail)
-                    .font(EDSTheme.shared.typography.monoCaption)
-                    .foregroundStyle(EDSTheme.shared.colors.textTertiary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, EDSTheme.shared.spacing.md)
         .padding(.vertical, EDSTheme.shared.spacing.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(EDSTheme.shared.colors.cardBackground)
+    }
+
+    private var themePicker: some View {
+        Picker("预览主题", selection: $selectionID) {
+            Section("包内预设") {
+                ForEach(EDSCatalogThemeCatalog.builtIn) { entry in
+                    Text(entry.name).tag(entry.id)
+                }
+            }
+            Section("包外自定义示例") {
+                ForEach(EDSCatalogThemeCatalog.custom) { entry in
+                    Text(entry.name).tag(entry.id)
+                }
+            }
+        }
+        .labelsHidden()
+        .pickerStyle(.menu)
+        .fixedSize()
+        .accessibilityIdentifier("catalog.theme.picker")
     }
 
     /// 当前主题的 5 个语义色，一眼看出语义色是否协调。

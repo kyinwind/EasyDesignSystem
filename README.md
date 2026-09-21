@@ -95,7 +95,6 @@ struct MyApp: App {
     init() {
         EDSTheme.shared.configure { tokens in
             tokens.colors.primary = .blue
-            tokens.colors.accent = .blue
         }
     }
 
@@ -404,7 +403,6 @@ struct MyApp: App {
     init() {
         EDSTheme.shared.configure { tokens in
             tokens.colors.primary = .blue
-            tokens.colors.accent = .blue
             tokens.spacing.lg = 22
         }
     }
@@ -424,6 +422,9 @@ EDSTheme.shared.applyPreset(.orange)
 ```
 
 当前提供 `.default`、`.blue`、`.orange` 和 `.purple`，其中 `.blue` 是 `.default` 的别名。
+
+> **主题色只有一个字段：`tokens.colors.primary`。** 组件里所有"跟随主题色"的渲染（实心按钮、浅底按钮、侧边栏选中态、全局 `.tint()`）都读它。
+> `tokens.colors.accent` 与 `tokens.colors.accentSoft` 自 0.3.1 起已废弃，包内不再读取——写入它们不会有任何可见效果，变更主题色请改 `primary`。
 
 ### 局部主题
 
@@ -576,6 +577,15 @@ EDSButton("开始处理", emphasis: .filled, size: .large) {}
 两种写法汇入同一份渲染实现，可以在同一页面里混用。需要自定义预设时，用 `EDSButtonAppearance` 组合三维后自行封装。
 
 > 三维写法要求至少给出 `emphasis:`。这是为了与 `EDSButton("确定") {}` 这类一维写法在编译期区分开——两者若都可省略参数，会产生初始化重载歧义。
+
+标题参数同时接受 `LocalizedStringKey` 与 `String`。App 若自带本地化函数（返回 `String`），可以直接传入，不必再用 `label:` 闭包绕开：
+
+```swift
+EDSButton(L("button.cancel"), role: .secondary) { onCancel() }
+EDSButton(L("toolbar.refresh"), emphasis: .outline, size: .small) { refresh() }
+```
+
+> 字面量调用（如 `EDSButton("确定")`）稳定命中 `LocalizedStringKey` 版本，两种重载并存不产生歧义。
 
 ### 文本与行
 

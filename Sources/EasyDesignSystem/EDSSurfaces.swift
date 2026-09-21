@@ -155,12 +155,12 @@ public struct EDSSidebarItemButton: View {
             .frame(minHeight: metrics.minimumInteractiveDimension)
             .background(
                 RoundedRectangle(cornerRadius: theme.radius.sm, style: .continuous)
-                    .fill(isSelected ? theme.colors.accentSoft : Color.clear)
+                    .fill(isSelected ? theme.colors.primarySoft : Color.clear)
             )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(isSelected ? theme.colors.accent : theme.colors.textPrimary)
+        .foregroundStyle(isSelected ? theme.colors.primary : theme.colors.textPrimary)
     }
 }
 

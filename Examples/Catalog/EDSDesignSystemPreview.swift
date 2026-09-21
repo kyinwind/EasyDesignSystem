@@ -189,7 +189,7 @@ public struct EDSDesignSystemPreview: View {
                 previewSection("颜色") {
                     VStack(alignment: .leading, spacing: 8) {
                         colorSwatchRow("Primary", color: draftColors.primary)
-                        colorSwatchRow("Accent", color: draftColors.accent)
+                        colorSwatchRow("Accent（废弃）", color: draftColors.accent)
                         colorSwatchRow("Success", color: draftColors.success)
                         colorSwatchRow("Warning", color: draftColors.warning)
                         colorSwatchRow("Danger", color: draftColors.danger)
@@ -297,7 +297,9 @@ public struct EDSDesignSystemPreview: View {
     private var colorEditor: some View {
         editorSection("颜色") {
             colorRow("Primary", color: $draftColors.primary)
-            colorRow("Accent", color: $draftColors.accent)
+            // 0.3.1 起 `accent` 已废弃：包内任何渲染都不再读取它，改这里不会有可见效果。
+            // 字段本身保留是为了兼容既有主题 JSON，故编辑器仍可查看与编辑。
+            colorRow("Accent（废弃）", color: $draftColors.accent)
             colorRow("Success", color: $draftColors.success)
             colorRow("Warning", color: $draftColors.warning)
             colorRow("Danger", color: $draftColors.danger)
@@ -500,7 +502,7 @@ public struct EDSDesignSystemPreview: View {
             .padding(.horizontal, draftSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: draftRadius.md)
-                    .fill(draftColors.accent.opacity(0.12))
+                    .fill(draftColors.primary.opacity(0.12))
             )
     }
 
@@ -569,12 +571,12 @@ public struct EDSDesignSystemPreview: View {
         HStack(spacing: draftSpacing.sm) {
             Image(systemName: icon)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(isSelected ? draftColors.accent : .secondary)
+                .foregroundStyle(isSelected ? draftColors.primary : .secondary)
                 .frame(width: 20)
 
             Text(label)
                 .font(.system(size: draftTypography.body15Size))
-                .foregroundStyle(isSelected ? draftColors.accent : .primary)
+                .foregroundStyle(isSelected ? draftColors.primary : .primary)
 
             Spacer()
         }
@@ -582,7 +584,7 @@ public struct EDSDesignSystemPreview: View {
         .padding(.vertical, draftSpacing.xs)
         .background(
             RoundedRectangle(cornerRadius: draftRadius.sm)
-                .fill(isSelected ? draftColors.accent.opacity(0.12) : Color.clear)
+                .fill(isSelected ? draftColors.primary.opacity(0.12) : Color.clear)
         )
     }
 

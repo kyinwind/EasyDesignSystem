@@ -22,8 +22,10 @@ if [[ -z "$device_id" ]]; then
     exit 1
 fi
 
+# 刻意**不加** `-quiet`：加了以后失败的测试只留下最后一句
+# "Failing tests: …"，连 `performAccessibilityAudit` 报的问题描述都看不到，
+# CI 上完全无从定位。这个脚本是用来跑 test 的，日志就是它的产出。
 xcodebuild \
-    -quiet \
     -project "$catalog_dir/EDSPlatformCatalog.xcodeproj" \
     -scheme EDSPlatformCatalog \
     -destination "platform=iOS Simulator,id=$device_id" \

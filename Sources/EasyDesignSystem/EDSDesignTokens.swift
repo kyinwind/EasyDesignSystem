@@ -84,8 +84,23 @@ extension Color {
 // JSON 编解码通过自定义 Codable 实现（内部用 hex 字符串中转）。
 
 public struct EDSColorTokens: Codable, Equatable, Sendable {
+    /// 主题色。**这是唯一的主题色来源**——包内所有"跟随主题色"的渲染都读它。
+    ///
+    /// 想换整体色系，改这里（或直接用 `EDSTheme.shared.applyPreset(_:)`）。
     public var primary: Color = .blue
+
+    /// ⚠️ **已废弃：包内不再读取本字段。**
+    ///
+    /// 它与 `primary` 长期并存且默认同值，导致"改主题色"这件事在包内有两条
+    /// 互相不知道的路径——只改 `primary` 时，浅底档按钮的底色、侧边栏选中态、
+    /// 全局 `.tint()` 仍是旧色（历史缺陷 A1，0.3.1 修复）。
+    ///
+    /// 保留字段的原因仅限兼容：`EDSColorTokens` 是 `Codable`，主题 JSON 与
+    /// 既有调用方的 `init(primary:accent:…)` 仍在写这个键，删除会造成 API 断裂。
+    ///
+    /// **要变更主题色请改 `primary`。** 写这里不会有任何效果。
     public var accent: Color = .blue
+
     public var success: Color = .green
     public var warning: Color = .orange
     public var danger: Color = .red
@@ -104,7 +119,18 @@ public struct EDSColorTokens: Codable, Equatable, Sendable {
 
     // MARK: - 派生色
 
-    public var accentSoft: Color { accent.opacity(0.12) }
+    /// 主题色的 12% 透明版本，用于浅底档按钮、选中态背景等。
+    ///
+    /// 包内所有"主题色浅底"都读这个属性（而不是 `accentSoft`），
+    /// 确保主题色只有一个来源：`primary`。
+    public var primarySoft: Color { primary.opacity(0.12) }
+
+    /// ⚠️ **已废弃：别名，等于 `primarySoft`。**
+    ///
+    /// 0.3.1 起它不再跟随 `accent` 字段，改为跟随 `primary`。
+    /// 命名保留只是为了不破坏既有调用方；新代码请用 `primarySoft`。
+    public var accentSoft: Color { primarySoft }
+
     public var successSoft: Color { success.opacity(0.12) }
     public var warningSoft: Color { warning.opacity(0.12) }
     public var dangerSoft: Color { danger.opacity(0.12) }
