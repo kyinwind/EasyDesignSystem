@@ -6,6 +6,17 @@
 
 ### Changed
 
+- `Scripts/check-api-compatibility.sh` 的判据由 **mangled name** 换成**符号路径**（symbolgraph 的
+  `pathComponents` 拼接，形如 `EDSButton.init(_:role:systemImage:action:)`）。
+  mangled name 会把**外部模块名**编进去（`7SwiftUI18LocalizedStringKeyV`、`7SwiftUI4ViewRz`），
+  而 Apple 在 Xcode 16 → 27 之间把 SwiftUI 拆出了 SwiftUICore，同一个 commit 在两台机器上
+  会算出不同的 identifier。实测 CI（Swift 6.1.2 / Xcode 16.4）因此误报 3 条 `EDSButton`
+  符号被删除，而那 3 个符号的代码一行未动。
+- 基线文件随之重建为路径口径（449 条）。跨模块扩展符号（本模块对 SwiftUI 类型所做
+  extension 的成员）带 `@` 前缀，其**缺失降级为告警**而不判失败：这批符号的产出数量受
+  Apple 模块拆分影响（同一 commit 本机 17 条、CI 15 条），计入失败等于把"Apple 调整了
+  模块组织"变成红灯。真正的删除仍会出现在日志与 annotation 里。
+- 新增 `--update-baseline` 选项，用于显式重建基线。
 - `Scripts/check-api-compatibility.sh` 在 GitHub Actions 下把诊断结论写入 **annotation**。
   本仓库的 job 日志接口需要 admin 权限（`/actions/jobs/{id}/logs` 返回 403），公开可读的
   只有 annotations —— 此前 CI 失败只能看到一句 `Process completed with exit code 1`，
