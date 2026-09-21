@@ -17,6 +17,12 @@
   Apple 模块拆分影响（同一 commit 本机 17 条、CI 15 条），计入失败等于把"Apple 调整了
   模块组织"变成红灯。真正的删除仍会出现在日志与 annotation 里。
 - 新增 `--update-baseline` 选项，用于显式重建基线。
+- `Scripts/check-api-compatibility.sh` 新增**崩溃自证**：`EXIT` trap 捕获任何非 0 退出
+  （包括被 signal 打断），把"死在哪个阶段 + 之前的输出 + 工具链版本"写进 `::error::`；
+  启动时先发一条 `::notice::` 心跳。所有外部命令调用都显式兜底，不再让 `set -o pipefail`
+  把某个命令的 signal 退出码传播成脚本自身的失败。
+  起因：一次 CI 上脚本以 **exit 134（SIGABRT）** 结束且没有留下任何 annotation，
+  唯一的线索是"相比上一版只多了一处 `xcodebuild -version` 调用"。
 - `Scripts/check-api-compatibility.sh` 在 GitHub Actions 下把诊断结论写入 **annotation**。
   本仓库的 job 日志接口需要 admin 权限（`/actions/jobs/{id}/logs` 返回 403），公开可读的
   只有 annotations —— 此前 CI 失败只能看到一句 `Process completed with exit code 1`，
