@@ -4,6 +4,13 @@
 
 ## Unreleased
 
+### Fixed
+
+- **`EDSButton` 不再被容器压缩变形**：标签补 `.lineLimit(1)` + `.fixedSize(horizontal: true, vertical: false)`，
+  按钮宽度永远由内容决定。此前标签 `Text` 默认可换行——父容器（HStack 等）横向空间不足时
+  文字被压成多行，按钮纵向鼓胀（实例：VideoHero 场景卡「设置选中文字音色」窄窗口下折成三行）。
+  修复后空间不足时整颗按钮保持胶囊形状，宁可溢出不折行。
+
 ### Changed
 
 - `Scripts/check-api-compatibility.sh` 的判据由 **mangled name** 换成**符号路径**（symbolgraph 的

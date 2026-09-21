@@ -43,6 +43,11 @@ struct EDSButtonVisualBody: View {
         label
             .edsFont(.bodyStrong, tokens: theme.typography)
             .foregroundColor(visual.foreground)
+            // 胶囊按钮的宽度永远由内容决定：禁止文字换行/压缩，
+            // 容器过窄时整颗按钮保持形状（宁可溢出，不变形折行）。
+            // 没有这两行时，HStack 空间不足会把 Text 压成多行，按钮纵向鼓胀。
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
             .frame(minHeight: metrics.interactiveHeight(for: visual.height))
             .padding(.horizontal, visual.horizontalPadding)
             .background(backgroundShape(for: visual))
