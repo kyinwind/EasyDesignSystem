@@ -102,13 +102,10 @@ public struct EDSButtonShowcase: View {
 
                 ForEach(EDSButton.Emphasis.allCases, id: \.self) { emphasis in
                     HStack(spacing: theme.spacing.sm) {
-                        // outline 自 0.4.0 废弃（渲染同 medium），行标加注；
-                        // 用 rawValue 比较避免直接引用废弃符号触发告警。
-                        Text(emphasis.rawValue == "outline" ? "outline·废弃" : emphasis.rawValue)
+                        // outline 自 0.4.2 恢复为 M3 浅描边档，行标加注说明配方。
+                        Text(emphasis.rawValue == "outline" ? "outline·浅描边" : emphasis.rawValue)
                             .edsFont(.caption, tokens: theme.typography)
-                            .foregroundColor(emphasis.rawValue == "outline"
-                                             ? theme.colors.textTertiary
-                                             : theme.colors.textSecondary)
+                            .foregroundColor(theme.colors.textSecondary)
                             .frame(width: 56, alignment: .leading)
 
                         ForEach(EDSButton.Tone.allCases, id: \.self) { tone in
@@ -184,7 +181,7 @@ public struct EDSButtonShowcase: View {
                 equivalenceRow(
                     "secondary",
                     EDSButton("取消", role: .secondary) {},
-                    EDSButton("取消", emphasis: .outline, tone: .accent, size: .regular) {}
+                    EDSButton("取消", emphasis: .medium, tone: .accent, size: .regular) {}
                 )
                 equivalenceRow(
                     "soft",

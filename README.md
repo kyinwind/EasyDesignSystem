@@ -553,7 +553,7 @@ EDSToggle(isOn: $isEnabled, label: "启用自动处理")
 
 | 维度 | 取值 | 含义 |
 | --- | --- | --- |
-| `Emphasis` | `.filled` `.medium` `.soft` `.plain`（`.outline` 已废弃，渲染同 `.medium`） | 视觉分量——这块按钮“多重” |
+| `Emphasis` | `.filled` `.medium` `.soft` `.plain` `.outline` | 视觉分量——这块按钮“多重” |
 | `Tone` | `.accent` `.neutral` `.danger` `.success` `.warning` | 语义色调——这块按钮“是什么性质” |
 | `Size` | `.small`(28) `.regular`(34) `.large`(44) | 尺寸档位 |
 

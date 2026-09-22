@@ -162,21 +162,15 @@ public struct EDSButton: View {
         /// 纯文字：最弱。
         case plain
 
-        /// 旧描边档。0.4.0 起描边退役，渲染为 `medium` 同款视觉。
-        @available(*, deprecated, message: "描边已退役；请改用 medium（渲染视觉相同）。")
+        /// 浅描边档（M3 风格）：1pt 中性浅边框 + tone 色文字 + 透明底。
+        /// 0.4.0 曾退役、0.4.2 恢复——按 Material Design 3 outlined 配方重做：
+        /// 边框用中性 `colors.border`、不染主题色，强调全靠文字色。
         case outline
 
-        /// 手动实现：Swift 无法为含 `@available(*, deprecated)` case 的枚举
-        /// 自动合成 `allCases`（合成代码引用废弃符号会被拒绝）。
-        /// 顺序 = 强度从强到弱，废弃的 outline 排在最后便于矩阵页对照。
-        /// outline 经 rawValue 构造，避免包内直接引用触发废弃告警。
-        public static var allCases: [Emphasis] {
-            var cases: [Emphasis] = [.filled, .medium, .soft, .plain]
-            if let outline = Emphasis(rawValue: "outline") {
-                cases.append(outline)
-            }
-            return cases
-        }
+        /// 显式声明（0.4.2 起）：CaseIterable 虽可合成，但合成版不产生
+        /// `allCases` 公开符号，会触发 API 基线"符号被删"告警，故保留显式实现。
+        public static var allCases: [Emphasis] { [.filled, .medium, .soft, .plain, .outline] }
+
     }
 
     /// 语义色调：这块按钮"是什么性质"。
@@ -481,8 +475,7 @@ extension EDSButtonAppearance {
             }
             borderColor = nil
 
-        case .medium, .outline:
-            // 0.4.0：描边退役。`outline` 保留为废弃别名，与 medium 同视觉。
+        case .medium:
             // 中档 = 各色调 25% 底 + "深一档的同色系"文字（杨哥定版 2026-09-22）：
             // 底色与文字同色系，色彩身份贯穿 filled/medium/soft/plain 四档；
             // 文字比 tone 再压深 30%（RGB×0.7），25% 色底上对比度优于 soft 的纯 tone 字，
@@ -494,6 +487,15 @@ extension EDSButtonAppearance {
                 : EDSPlatformColorBridge.darkened(toneColor, by: 0.7) ?? colors.textPrimary
             background = toneColor.opacity(0.25)
             borderColor = nil
+
+        case .outline:
+            // M3 风格浅描边（杨哥定版 2026-09-22 恢复）：透明底 + 1pt 中性浅边框
+            // + tone 色文字。边框不染主题色——强调全靠文字色（对照 Material
+            // Design 3 outlined：边框只是默认态的轻量占位，不是强调手段）。
+            // success 与 soft 档同规则：同色文字对比度不足，改自适应正文色。
+            foreground = tone == .success ? colors.textPrimary : toneColor
+            background = nil
+            borderColor = colors.border
 
         case .soft:
             // 例外：成功色的浅底 + 同色文字对比度不足（#27B15A 在 12% 浅绿底上约 3.0:1，
@@ -535,9 +537,8 @@ extension EDSButtonAppearance {
             foreground: foreground,
             background: background,
             borderColor: borderColor,
-            // 历史值：现有描边按钮为 1.5pt。改用 `stroke.hairline`(=1) 会让所有
-            // 描边按钮变细，属于视觉变化，因此本次保持 1.5。
-            borderWidth: 1.5,
+            // 描边宽度走 token（hairline=1pt）。当前仅 outline 档渲染边框。
+            borderWidth: tokens.stroke.hairline,
             height: height,
             horizontalPadding: horizontalPadding
         )

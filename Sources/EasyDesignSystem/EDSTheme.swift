@@ -230,8 +230,8 @@ public struct EDSPresetTheme: Identifiable, Hashable, Sendable {
     /// 默认蓝色主题
     ///
     /// 语义色（success / warning / danger）此前未设置，会落到 `EDSColorTokens()` 的
-    /// 默认值即 SwiftUI 动态系统色，导致三个内置预设的语义色互不一致
-    /// （例如"删除红"在蓝主题下是系统红、在橙主题下是 #E54444）。此处补齐为统一 hex。
+    /// 默认值即 SwiftUI 动态系统色，导致三个内置预设的语义色互不一致。
+    /// 此处补齐为统一 hex：danger 三预设统一 #FF3B30（杨哥定版 2026-09-22）。
     public static let `default` = EDSPresetTheme(
         id: "default",
         name: "默认蓝色",
@@ -241,7 +241,7 @@ public struct EDSPresetTheme: Identifiable, Hashable, Sendable {
             t.colors.accent  = Color(hexRGB: "#3185FF")
             t.colors.success = Color(hexRGB: "#27B15A")
             t.colors.warning = Color(hexRGB: "#F9B135")
-            t.colors.danger  = Color(hexRGB: "#E54444")
+            t.colors.danger  = Color(hexRGB: "#FF3B30")
             t.heroGradient   = EDSDesignTokens.heroGradientBlue
             return t
         }()
@@ -260,7 +260,7 @@ public struct EDSPresetTheme: Identifiable, Hashable, Sendable {
             t.colors.accent  = Color(hexRGB: "#FF6B00")
             t.colors.success = Color(hexRGB: "#27B15A")
             t.colors.warning = Color(hexRGB: "#F9B135")
-            t.colors.danger  = Color(hexRGB: "#E54444")
+            t.colors.danger  = Color(hexRGB: "#FF3B30")
             t.heroGradient   = EDSDesignTokens.heroGradientOrange
             return t
         }()
@@ -276,7 +276,7 @@ public struct EDSPresetTheme: Identifiable, Hashable, Sendable {
             t.colors.accent  = Color(hexRGB: "#8B5CF6")
             t.colors.success = Color(hexRGB: "#10B981")
             t.colors.warning = Color(hexRGB: "#F59E0B")
-            t.colors.danger  = Color(hexRGB: "#EF4444")
+            t.colors.danger  = Color(hexRGB: "#FF3B30")
             t.heroGradient   = EDSDesignTokens.heroGradientPurple
             return t
         }()

@@ -2,6 +2,17 @@
 
 本项目遵循语义化版本管理。`1.0.0` 前，patch 版本用于向后兼容的新增、可见性提升和 Bug 修复；minor 版本用于有架构意义的节点、行为变更或新的对外模型。`1.0.0` 后，新增公开 API 按标准语义化版本管理进入 minor 版本。
 
+## 0.4.2 — 2026-09-22
+
+### Changed
+
+- **`Emphasis.outline` 恢复为一等档位**（0.4.0 曾废弃），并按 Material Design 3 outlined
+  配方重做视觉：**透明底 + 1pt 中性浅边框（`colors.border`）+ tone 色文字**。
+  边框不再染主题色（0.4.0 前 1.5pt 实色描边“太实”的根源），强调全靠文字色；
+  `success` 与 `soft` 档同规则改用 `textPrimary` 保证可读。移除 `@available(deprecated)`，
+  `allCases` 恢复编译器合成。`medium`（25% 色底）与 `plain`（无底无框）不受影响，
+  档位强度序：`filled` → `medium` → `outline` → `soft` → `plain`。
+
 ## 0.4.1 — 2026-09-22
 
 ### Added

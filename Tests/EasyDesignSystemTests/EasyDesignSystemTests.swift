@@ -399,28 +399,34 @@ final class EasyDesignSystemTests: XCTestCase {
         _ = EDSButton("确定", role: .primary) {}
     }
 
-    // MARK: - 0.4.0 · medium 档取代 outline（描边退役）
+    // MARK: - 0.4.2 · outline 恢复（M3 浅描边）
 
-    /// 废弃的 `outline` 与 `medium` 渲染视觉必须完全相等（内部转发保证）。
+    /// outline 档视觉规则：透明底 + 1pt 中性浅边框 + tone 色文字（success 例外）。
     ///
-    /// outline 经 rawValue 构造，避免测试源码直接引用废弃符号触发告警。
-    func testOutlineRendersIdenticallyToMedium() {
-        guard let outline = EDSButton.Emphasis(rawValue: "outline") else {
-            return XCTFail("outline case 应保留（废弃别名），rawValue 构造不应失败")
-        }
+    /// 杨哥定版（2026-09-22 恢复）：按 Material Design 3 outlined 配方重做——
+    /// 边框用中性 `colors.border`、不染主题色，强调全靠文字色。
+    func testOutlineResolvesToHairlineNeutralBorderWithToneText() {
         let tokens = EDSDesignTokens()
 
         for tone in EDSButton.Tone.allCases {
-            let medium = EDSButtonAppearance(
-                emphasis: .medium, tone: tone, size: .regular
-            ).resolved(tokens: tokens)
-            let legacy = EDSButtonAppearance(
-                emphasis: outline, tone: tone, size: .regular
+            let visual = EDSButtonAppearance(
+                emphasis: .outline, tone: tone, size: .regular
             ).resolved(tokens: tokens)
 
-            XCTAssertEqual(medium.foreground, legacy.foreground, "tone=\(tone.rawValue) 文字色不一致")
-            XCTAssertEqual(medium.background, legacy.background, "tone=\(tone.rawValue) 底色不一致")
-            XCTAssertNil(legacy.borderColor, "描边已退役，borderColor 必须为 nil")
+            let toneColor: Color
+            switch tone {
+            case .accent:  toneColor = tokens.colors.primary
+            case .neutral: toneColor = Color.primary
+            case .danger:  toneColor = tokens.colors.danger
+            case .success: toneColor = tokens.colors.success
+            case .warning: toneColor = tokens.colors.warning
+            }
+
+            let expectedForeground: Color = tone == .success ? tokens.colors.textPrimary : toneColor
+            XCTAssertEqual(visual.foreground, expectedForeground, "tone=\(tone.rawValue) 文字色不一致")
+            XCTAssertNil(visual.background, "tone=\(tone.rawValue) outline 必须透明底")
+            XCTAssertEqual(visual.borderColor, tokens.colors.border, "tone=\(tone.rawValue) 边框必须为中性 border 色")
+            XCTAssertEqual(visual.borderWidth, tokens.stroke.hairline, "tone=\(tone.rawValue) 边框宽度必须为 hairline")
         }
     }
 
@@ -476,8 +482,8 @@ final class EasyDesignSystemTests: XCTestCase {
         XCTAssertGreaterThan(darkenedSum, 0)
     }
 
-    /// allCases 手动实现必须包含全部 5 个 case（含废弃 outline）。
-    func testEmphasisAllCasesIncludeMediumAndDeprecatedOutline() {
+    /// CaseIterable 合成的 allCases 必须包含全部 5 个 case（含恢复的 outline）。
+    func testEmphasisAllCasesIncludeMediumAndOutline() {
         let all = EDSButton.Emphasis.allCases.map(\.rawValue)
         XCTAssertEqual(
             Set(all),
