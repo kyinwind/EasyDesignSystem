@@ -16,6 +16,21 @@ final class EasyDesignSystemTests: XCTestCase {
         }
 
         _ = EDSButton("保存", role: .primary, systemImage: "checkmark") {}
+        _ = EDSCommandGroup {
+            EDSButton("试听", emphasis: .soft, size: .small) {}
+            EDSButton("试看", emphasis: .soft, size: .small) {}
+        }
+        _ = EDSSplitButton("导出", systemImage: "square.and.arrow.up") {
+        } menu: {
+            Button("导出 Word") {}
+        }
+        _ = EDSCommandPopover(
+            "页面操作",
+            isPresented: .constant(false),
+            size: .small
+        ) {
+            Button("隐藏") {}
+        }
         _ = EDSBadge("Pro", style: .accent)
         _ = EDSToggle(isOn: .constant(true), localizedLabel: "自动更新")
         _ = EDSCard { Text("Card") }

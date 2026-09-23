@@ -119,6 +119,12 @@ EDSColorTokens.textSecondary
 EDSColorTokens.textTertiary
 EDSColorTokens.warning
 EDSColorTokens.warningSoft
+EDSCommandGroup
+EDSCommandGroup.body
+EDSCommandGroup.init(spacing:content:)
+EDSCommandPopover
+EDSCommandPopover.body
+EDSCommandPopover.init(_:isPresented:emphasis:tone:size:systemImage:arrowEdge:content:)
 EDSComparisonSection
 EDSComparisonSection.body
 EDSComparisonSection.features
@@ -389,6 +395,10 @@ EDSSpacingTokens.xs
 EDSSpacingTokens.xxl
 EDSSpacingTokens.xxs
 EDSSpacingTokens.xxxl
+EDSSplitButton
+EDSSplitButton.body
+EDSSplitButton.init(_:emphasis:tone:size:systemImage:menuAccessibilityLabel:isPrimaryDisabled:isMenuDisabled:action:menu:)
+EDSSplitButton.init(_:role:systemImage:menuAccessibilityLabel:isPrimaryDisabled:isMenuDisabled:action:menu:)
 EDSStrokeTokens
 EDSStrokeTokens.hairline
 EDSStrokeTokens.init()

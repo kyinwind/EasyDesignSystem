@@ -706,6 +706,37 @@ let json = try EDSTheme.shared.exportJSONString()
 
 ## 7. Catalog 与 Preview
 
+### 密集工具栏的命令组合
+
+对于桌面端工具栏，不必把每个操作都做成同等权重的独立按钮，也不必统一塞入含义模糊的“更多”：
+
+```swift
+EDSCommandGroup {
+    EDSButton("叠加元素", emphasis: .soft, size: .small) {}
+    EDSButton("背景音乐", emphasis: .soft, size: .small) {}
+}
+
+EDSSplitButton("导出视频", systemImage: "square.and.arrow.up") {
+    exportVideo()
+} menu: {
+    Button("导出 Word") { exportWord() }
+    Button("导出讲解词") { exportScripts() }
+}
+
+EDSCommandPopover(
+    "页面操作",
+    isPresented: $showsPageActions,
+    size: .small,
+    systemImage: "slider.horizontal.3"
+) {
+    PageActionsView()
+}
+```
+
+- `EDSCommandGroup` 表达相邻命令属于同一任务域。
+- `EDSSplitButton` 保留一键主操作，同时收纳同类替代操作。
+- `EDSCommandPopover` 使用明确名称打开结构化浮层，适合页面操作、插入、格式等可继续扩展的命令域。
+
 Package 提供 `EasyDesignSystemCatalog` library target，用于在 Xcode Canvas 中预览设计系统。三个预览界面的职责不同：
 
 | 预览界面 | 用途 | 适合在什么时候使用 |

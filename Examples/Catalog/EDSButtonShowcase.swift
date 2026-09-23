@@ -13,6 +13,7 @@ import EasyDesignSystem
 
 public struct EDSButtonShowcase: View {
     @Environment(\.edsTheme) private var theme
+    @State private var showsPageActions = false
 
     private let embedsScrollView: Bool
 
@@ -39,6 +40,7 @@ public struct EDSButtonShowcase: View {
             doneVsBadgeSection
             aliasEquivalenceSection
             newCapabilitySection
+            commandControlsSection
         }
         .padding(theme.spacing.xl)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -235,6 +237,49 @@ public struct EDSButtonShowcase: View {
                     "灰色实心，不抢主题色",
                     EDSButton("跳过", emphasis: .filled, tone: .neutral) {}
                 )
+            }
+        }
+    }
+
+    // MARK: 命令组合组件
+
+    private var commandControlsSection: some View {
+        section(
+            "命令组合",
+            subtitle: "用明确的任务名称和分组关系收纳密集工具栏，避免把所有操作都降级为“更多”。"
+        ) {
+            VStack(alignment: .leading, spacing: theme.spacing.md) {
+                EDSCommandGroup {
+                    EDSButton("叠加元素", emphasis: .soft, size: .small, systemImage: "square.3.layers.3d") {}
+                    EDSButton("背景音乐", emphasis: .soft, size: .small, systemImage: "music.note") {}
+                }
+
+                EDSSplitButton(
+                    "导出视频",
+                    role: .primary,
+                    systemImage: "square.and.arrow.up",
+                    menuAccessibilityLabel: "导出选项"
+                ) {
+                } menu: {
+                    Button("导出 Word") {}
+                    Button("导出讲解词") {}
+                }
+
+                EDSCommandPopover(
+                    "页面操作",
+                    isPresented: $showsPageActions,
+                    size: .small,
+                    systemImage: "slider.horizontal.3"
+                ) {
+                    VStack(alignment: .leading, spacing: theme.spacing.xs) {
+                        Button("隐藏当前页") { showsPageActions = false }
+                        Button("插入视频") { showsPageActions = false }
+                        Divider()
+                        Button("删除页面", role: .destructive) { showsPageActions = false }
+                    }
+                    .padding(theme.spacing.md)
+                    .frame(minWidth: 220, alignment: .leading)
+                }
             }
         }
     }
