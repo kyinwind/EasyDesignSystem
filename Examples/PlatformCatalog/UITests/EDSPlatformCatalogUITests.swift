@@ -11,6 +11,10 @@ final class EDSPlatformCatalogUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["预览环境"].exists)
         XCTAssertTrue(app.buttons["继续"].firstMatch.exists)
         XCTAssertTrue(app.switches.firstMatch.exists || app.checkBoxes.firstMatch.exists)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["catalog.color-style.picker"]
+                .waitForExistence(timeout: 5)
+        )
     }
 
     func testAccessibilityDarkScenarioLaunches() {

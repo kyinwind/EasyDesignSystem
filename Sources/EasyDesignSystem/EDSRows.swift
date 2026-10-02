@@ -23,7 +23,7 @@ public struct EDSSettingRow<Trailing: View>: View {
 
     public var body: some View {
         let metrics = EDSResolvedMetrics.resolve(
-            tokens: theme,
+            tokens: theme.tokens,
             profile: interactionProfile,
             horizontalSizeClass: horizontalSizeClass
         )
@@ -80,7 +80,7 @@ public struct EDSValueRow: View {
 
     public var body: some View {
         let metrics = EDSResolvedMetrics.resolve(
-            tokens: theme,
+            tokens: theme.tokens,
             profile: interactionProfile,
             horizontalSizeClass: horizontalSizeClass
         )

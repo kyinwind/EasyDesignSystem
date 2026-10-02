@@ -29,16 +29,22 @@ struct EDSButtonVisualBody: View {
     @Environment(\.edsInteractionProfile) private var interactionProfile
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
     @State private var isHovered = false
 
     var body: some View {
         let metrics = EDSResolvedMetrics.resolve(
-            tokens: theme,
+            tokens: theme.tokens,
             profile: interactionProfile,
             horizontalSizeClass: horizontalSizeClass
         )
-        let visual = appearance.resolved(tokens: theme)
         let showsHover = metrics.supportsHoverEnhancement && isHovered
+        let state: EDSInteractionState = isPressed ? .pressed : (showsHover ? .hovered : .rest)
+        let visual = appearance.resolved(
+            theme: theme,
+            brightness: colorScheme == .dark ? .dark : .light,
+            state: state
+        )
 
         label
             .edsFont(.bodyStrong, tokens: theme.typography)
@@ -52,7 +58,7 @@ struct EDSButtonVisualBody: View {
             .padding(.horizontal, visual.horizontalPadding)
             .background(backgroundShape(for: visual))
             .contentShape(RoundedRectangle(cornerRadius: theme.radius.md))
-            .opacity(isEnabled ? (showsHover ? 0.85 : 1.0) : 0.5)
+            .opacity(isEnabled ? 1.0 : 0.5)
             .scaleEffect(isPressed && !reduceMotion ? 0.97 : 1.0)
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.15), value: isHovered)
             .onHover { hovering in
@@ -426,27 +432,28 @@ extension EDSButtonAppearance {
     /// 把三维组合解析为具体视觉值。
     ///
     /// 纯函数：只依赖传入的 token，不读全局单例，便于测试。
-    func resolved(tokens: EDSDesignTokens) -> EDSResolvedButtonVisual {
-        let colors = tokens.colors
+    func resolved(
+        theme: EDSThemeData,
+        brightness: EDSBrightness = .light,
+        state: EDSInteractionState = .rest
+    ) -> EDSResolvedButtonVisual {
+        let colors = theme.resolvedColors(for: brightness)
 
         // 各色调的前景色基色（实心档除外，实心档文字另有规则）
         let toneColor: Color
         switch tone {
-        case .accent:  toneColor = colors.primary
-        case .neutral: toneColor = Color.primary
-        case .danger:  toneColor = colors.danger
-        case .success: toneColor = colors.success
-        case .warning: toneColor = colors.warning
+        case .accent:  toneColor = colors.brandForeground
+        case .neutral: toneColor = colors.foregroundPrimary
+        case .danger:  toneColor = colors.dangerForeground
+        case .success: toneColor = colors.successForeground
+        case .warning: toneColor = colors.warningForeground
         }
 
         // 浅底档的背景色：各色调的 12% 透明版本
         let toneSoftColor: Color
         switch tone {
-        case .accent:  toneSoftColor = colors.primarySoft
-        case .neutral: toneSoftColor = Color.primary.opacity(0.12)
-        case .danger:  toneSoftColor = colors.dangerSoft
-        case .success: toneSoftColor = colors.successSoft
-        case .warning: toneSoftColor = colors.warningSoft
+        case .neutral: toneSoftColor = EDSInteractionResolver.neutralSurface(brightness: brightness, state: state)
+        default: toneSoftColor = EDSInteractionResolver.softSurface(family: interactionFamily, seeds: theme.seeds, style: theme.colorStyle, brightness: brightness, state: state)
         }
 
         let foreground: Color
@@ -459,19 +466,11 @@ extension EDSButtonAppearance {
             case .neutral:
                 // 中性实心需要"反色"：底色是 primary 的 75%，文字用页面底色，
                 // 这样浅色外观下是"深灰底 + 白字"，深色外观下是"浅灰底 + 深字"。
-                foreground = colors.pageBackground
-                background = Color.primary.opacity(0.75)
-            case .accent, .danger:
-                // 历史值：与改造前逐像素一致，保证现有 App 视觉零变化。
-                foreground = .white
-                background = toneColor
-            case .success, .warning:
-                // 杨哥定版（2026-09-22）：彩色实心档（success/warning）文字一律白色，
-                // 与 accent/danger 实心档观感统一；textPrimary 近黑字目视偏重。
-                // 白字在 #27B15A / #F9B135 上对比度仅约 2.8:1 / 1.9:1、不达 WCAG AA
-                // ——刻意接受的取舍，主题调浅这两个色时需回评。
-                foreground = .white
-                background = toneColor
+                foreground = colors.foregroundInverse
+                background = EDSInteractionResolver.neutralStrongSurface(brightness: brightness, state: state)
+            default:
+                foreground = onStrongColor(colors)
+                background = EDSInteractionResolver.strongSurface(family: interactionFamily, seeds: theme.seeds, style: theme.colorStyle, brightness: brightness, state: state)
             }
             borderColor = nil
 
@@ -482,10 +481,10 @@ extension EDSButtonAppearance {
             // 且与 soft 拉开"文字深浅"这一维层次。neutral 无彩度，维持 textPrimary。
             // 注意：darkened 按浅色外观解析（与 tone 静态 hex 的现状一致），
             // 深色外观的适配是所有静态 tone 色的共同欠账，不单独欠在这里。
-            foreground = tone == .neutral
-                ? colors.textPrimary
-                : EDSPlatformColorBridge.darkened(toneColor, by: 0.7) ?? colors.textPrimary
-            background = toneColor.opacity(0.25)
+            foreground = toneColor
+            background = tone == .neutral
+                ? EDSInteractionResolver.neutralSurface(brightness: brightness, state: state)
+                : EDSInteractionResolver.mediumSurface(family: interactionFamily, seeds: theme.seeds, style: theme.colorStyle, brightness: brightness, state: state)
             borderColor = nil
 
         case .outline:
@@ -493,16 +492,16 @@ extension EDSButtonAppearance {
             // + tone 色文字。边框不染主题色——强调全靠文字色（对照 Material
             // Design 3 outlined：边框只是默认态的轻量占位，不是强调手段）。
             // success 与 soft 档同规则：同色文字对比度不足，改自适应正文色。
-            foreground = tone == .success ? colors.textPrimary : toneColor
+            foreground = toneColor
             background = nil
-            borderColor = colors.border
+            borderColor = colors.borderDefault
 
         case .soft:
             // 例外：成功色的浅底 + 同色文字对比度不足（#27B15A 在 12% 浅绿底上约 3.0:1，
             // 低于 WCAG AA 的 4.5:1），因此改用自适应正文色保证可读性。
             // 该组合已不再被 `.done` 使用（`.done` 取实心档），但三维入口仍可构造出
             // `.soft + .success`，故规则保留。
-            foreground = tone == .success ? colors.textPrimary : toneColor
+            foreground = toneColor
             background = toneSoftColor
             borderColor = nil
 
@@ -521,16 +520,16 @@ extension EDSButtonAppearance {
         let height: CGFloat
         switch size {
         case .small:   height = 28
-        case .regular: height = tokens.controlSize.buttonHeight
+        case .regular: height = theme.controlSize.buttonHeight
         case .large:   height = 44
         }
 
         // 横向内边距。`.regular` 用 `spacing.md`(=16)，与改造前一致。
         let horizontalPadding: CGFloat
         switch size {
-        case .small:   horizontalPadding = tokens.spacing.sm
-        case .regular: horizontalPadding = tokens.spacing.md
-        case .large:   horizontalPadding = tokens.spacing.lg
+        case .small:   horizontalPadding = theme.spacing.sm
+        case .regular: horizontalPadding = theme.spacing.md
+        case .large:   horizontalPadding = theme.spacing.lg
         }
 
         return EDSResolvedButtonVisual(
@@ -538,10 +537,22 @@ extension EDSButtonAppearance {
             background: background,
             borderColor: borderColor,
             // 描边宽度走 token（hairline=1pt）。当前仅 outline 档渲染边框。
-            borderWidth: tokens.stroke.hairline,
+            borderWidth: theme.stroke.hairline,
             height: height,
             horizontalPadding: horizontalPadding
         )
+    }
+
+    private var interactionFamily: EDSInteractionColorFamily {
+        switch tone { case .accent, .neutral: .brand; case .danger: .danger; case .success: .success; case .warning: .warning }
+    }
+
+    private func onStrongColor(_ colors: EDSSemanticColors) -> Color {
+        switch tone { case .accent, .neutral: colors.brandOnStrong; case .danger: colors.dangerOnStrong; case .success: colors.successOnStrong; case .warning: colors.warningOnStrong }
+    }
+
+    func resolved(tokens: EDSDesignTokens) -> EDSResolvedButtonVisual {
+        resolved(theme: EDSThemeData(tokens: tokens))
     }
 }
 

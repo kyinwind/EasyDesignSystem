@@ -2,6 +2,25 @@
 
 本项目遵循语义化版本管理。`1.0.0` 前，patch 版本用于向后兼容的新增、可见性提升和 Bug 修复；minor 版本用于有架构意义的节点、行为变更或新的对外模型。`1.0.0` 后，新增公开 API 按标准语义化版本管理进入 minor 版本。
 
+## 0.5.0 — 2026-10-02
+
+### Changed
+
+- 同步 Flutter `EDS_ColorScheme_2.0`：主题颜色从直接色值升级为五个种子色，经 HCT 色调盘解析为完整语义颜色。
+- 新增浅色/深色中性色基础、43 个语义角色、按外观独立的语义覆盖，以及 layer/interaction 解析器。
+- `EDSThemeData` 现在统一承载 `seeds`、`semanticOverrides` 和非颜色 tokens；SwiftUI 环境与内置组件使用自适应语义颜色。
+- `EDSDefaultTheme.json` 的 Seeds 与非颜色 Token 和 Flutter 包保持一致，并增加 Swift 侧的 `colors.style` 选择。
+- 新增 JSON 驱动的 `.default`、`.vivid`、`.elegant` 三套色彩风格；同一组 Seed 可选择平衡、浓烈或淡雅的 tonal mapping，调用者也可加载自定义风格 JSON。
+- Color Style JSON 新增可选 `contentColors.light/dark`，可随风格覆盖正文和 `onStrong` 前景色；未配置角色继续使用自动生成结果。
+- Catalog 顶部新增 Color Style 选择器，可将默认、浓烈、淡雅风格与不同 Seed 组合，并实时刷新全部组件预览。
+- 主题编辑器预览统一改用解析后的语义颜色，Seed、Color Style、明暗外观与其他 Catalog 页面保持一致；导出和应用主题时保留当前风格及语义覆盖。
+- 主题 JSON 改用 `colors.seeds.*`；旧 `colors.primary/accent/...` 结构会返回带迁移提示的解码错误。
+
+### Implementation
+
+- 内置官方 Material Color Utilities 的最小 Swift HCT 实现，固定上游提交 `5b3618b16fdc3825e21d5679bafd144662088ea1`，许可证为 Apache-2.0。
+- Swift tools 最低版本保持 6.1，平台最低版本保持 iOS 17 / macOS 14。
+
 ## 0.4.3 — 2026-09-24
 
 ### Added

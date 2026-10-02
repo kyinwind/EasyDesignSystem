@@ -24,6 +24,72 @@ VStack {
 
 调用方只说明这是一张 Card，EasyDesignSystem 负责将它映射为卡片的内边距、语义背景、圆角、边框和阴影。
 
+### ColorScheme 2.0：颜色也表达语义
+
+颜色系统遵循同一原则：业务代码描述颜色承担的职责，而不是直接选择某个固定色值。按钮使用 `brandSurfaceStrong`，提示使用 `warningSurface`，正文使用 `foregroundPrimary`。组件不需要知道最终是蓝色、橙色，还是某个具体十六进制值。
+
+ColorScheme 2.0 将颜色生成分成四层：
+
+```mermaid
+flowchart LR
+    subgraph Inputs[主题输入]
+        Seeds["五类 Seed<br/>Brand · Information · Success · Warning · Danger"]
+        Style["Color Style JSON<br/>默认 · 浓烈 · 淡雅 · 自定义"]
+        ThemeOverride["Theme semanticOverrides<br/>主题或场景例外"]
+    end
+
+    Seeds --> HCT["Material Color Utilities<br/>HCT Perceptual Tonal Palettes"]
+    HCT --> Tone["按明暗外观选择 Tone<br/>foreground · surface · strong · border · onStrong"]
+    Style -->|"Tone 映射与交互态偏移"| Tone
+    Tone --> Semantic["Semantic Colors<br/>稳定的颜色职责"]
+    Style -->|"可选 contentColors"| Semantic
+    ThemeOverride -->|"最高优先级覆盖"| Semantic
+
+    Semantic --> Components["SwiftUI 组件<br/>按钮 · 徽标 · 表面 · 边框 · 文字"]
+    Components --> Result["一致的浅色 / 深色界面"]
+
+    classDef input fill:#FFF3E8,stroke:#C65A00,color:#4A2100;
+    classDef engine fill:#EAF2FF,stroke:#3979C6,color:#102A43;
+    classDef output fill:#EAF8EF,stroke:#2D8A4E,color:#123B21;
+    class Seeds,Style,ThemeOverride input;
+    class HCT,Tone,Semantic engine;
+    class Components,Result output;
+```
+
+图中的主链路负责自动生成完整颜色体系；Color Style 同时影响 Tone 选择和可选前景色，`semanticOverrides` 只处理最终的主题例外。组件始终只读取 Semantic Colors。
+
+#### Seed 决定色系，不直接充当界面颜色
+
+主题提供 Brand、Information、Success、Warning、Danger 五个 Seed。Seed 是生成色调盘的起点，同一个 Seed 会派生出前景、浅色表面、强调表面、边框和强调表面上的内容色。这样可以避免用透明度临时拼色，也能让同一种语义在不同组件中保持一致。
+
+#### 以视觉感知为基础生成明暗层级
+
+底层使用 Google Material Color Utilities 的 HCT 模型生成 Perceptual Tonal Palette。Tone 的变化更接近人眼感受到的明暗变化，因此不同色相在相同层级上拥有更稳定的视觉重量。浅色和深色外观分别选择合适的 Tone，而不是简单反色。
+
+#### 色系与风格彼此独立
+
+Seed 回答“是什么颜色”，Color Style 回答“这种颜色如何呈现”。同一套橙色 Seed 可以使用默认、浓烈或淡雅风格，也可以加载调用方随 App 发布的自定义风格 JSON。风格文件负责 Tone 映射、交互态偏移以及可选的文字/图标前景色，使产品能形成自己的视觉性格，同时避免把风格参数写死在组件代码中。
+
+#### 组件只消费语义角色
+
+组件根据用途读取语义色，不直接读取 Seed。强按钮、柔和按钮、状态徽标、表面、边框和正文各自使用稳定的角色，因此更换 Seed 或 Color Style 时，整个界面可以一致地变化，不需要逐个修改组件。
+
+#### 可读性优先于固定色值
+
+`onStrong` 和正文前景色默认随色调盘自动生成。风格 JSON 可以覆盖这些前景色，但应与对应背景保持至少 4.5:1 的正文对比度。内置风格会通过对比度测试同时验证浅色和深色外观。
+
+#### 覆盖关系保持清晰
+
+颜色从通用到具体依次解析：
+
+```text
+Material 自动结果
+  → Color Style 的 contentColors
+  → Theme 的 semanticOverrides
+```
+
+大多数应用只需选择 Seed 和 Color Style；品牌规范需要固定前景色时写入风格文件；只有特定主题或场景的例外才使用 `semanticOverrides`。这一顺序既保留自动配色能力，也允许调用方进行精确控制。
+
 ### 易用 API 与精细 API 并行
 
 EasyDesignSystem 提供两层 API：
@@ -93,8 +159,8 @@ import EasyDesignSystem
 @main
 struct MyApp: App {
     init() {
-        EDSTheme.shared.configure { tokens in
-            tokens.colors.primary = .blue
+        EDSTheme.shared.configureTheme { theme in
+            theme.seeds.brand = .blue
         }
     }
 
@@ -393,6 +459,90 @@ EDSTheme.shared.configure { tokens in
 
 ## 5. 主题
 
+### ColorScheme 2.0
+
+颜色配置采用“种子色 → HCT 色调盘 → 语义颜色”的模型。业务代码配置五个种子色，组件只读取语义角色；浅色与深色外观会分别解析，不需要为每个组件手工维护两套颜色。
+
+```swift
+EDSTheme.shared.configureTheme { theme in
+    theme.seeds.brand = Color(hexRGB: "#FF6B00")
+    theme.seeds.information = Color(hexRGB: "#3185FF")
+}
+
+let light = EDSTheme.shared.resolvedColors(for: .light)
+let dark = EDSTheme.shared.resolvedColors(for: .dark)
+```
+
+可用语义角色覆盖 surface、foreground、border，以及 brand / information / success / warning / danger 五个颜色族。覆盖按明暗模式独立设置：
+
+```swift
+EDSTheme.shared.configureTheme { theme in
+    theme.semanticOverrides.light[.borderFocus] = "#123456"
+    theme.semanticOverrides.dark[.borderFocus] = "#ABCDEF"
+}
+```
+
+`EDSLayerResolver` 统一决定 base、raised、nested、overlay 层级的表面和边框；`EDSInteractionResolver` 统一生成 rest、hovered、pressed 状态色。
+
+同一个 Seed 可以选择不同的内置色彩风格。风格参数来自包内 JSON，并未写死在组件中：
+
+```swift
+EDSTheme.shared.configureTheme { theme in
+    theme.seeds.brand = Color(hexRGB: "#FF6B00")
+    theme.colorStyle = .vivid       // 浓烈
+    // theme.colorStyle = .default  // 平衡，默认
+    // theme.colorStyle = .elegant  // 淡雅
+}
+```
+
+调用者也可以加载自己的风格文件：
+
+```swift
+let style = try EDSColorStyle.load(jsonFileURL: url)
+EDSTheme.shared.applyColorStyle(style)
+```
+
+风格 JSON 还可以按明暗模式覆盖文字和图标前景色。下面是完整风格文件中的 `contentColors` 字段片段；`light`、`dark` 和三组 interaction tone 等其他必填字段可参考包内 `EDSDefaultColorStyle.json`。只需写需要定制的前景角色，未写的角色继续由 Material tonal palette 自动生成：
+
+```json
+{
+  "contentColors": {
+    "light": {
+      "foregroundPrimary": "#18120E",
+      "brandOnStrong": "#FFFFFF"
+    },
+    "dark": {
+      "foregroundPrimary": "#F7F1ED",
+      "brandOnStrong": "#1A0D04"
+    }
+  }
+}
+```
+
+支持 `foregroundPrimary`、`foregroundSecondary`、`foregroundTertiary`、`foregroundDisabled`、`foregroundInverse`，以及 `brandOnStrong`、`informationOnStrong`、`successOnStrong`、`warningOnStrong`、`dangerOnStrong`。配置值必须是 `#RRGGBB`；surface 和 border 仍由 tone 配置与主题语义覆盖负责。自定义前景色应与对应背景保持至少 4.5:1 的正文对比度。
+
+解析优先级从低到高为：Material 自动结果 → Color Style 的 `contentColors` → Theme 的 `semanticOverrides`。Catalog 顶部可以同时选择 Seed/主题和默认、浓烈、淡雅三种 Color Style，所有预览会实时刷新，便于提交风格文件前检查整体效果。
+
+主题 JSON 的颜色结构为：
+
+```json
+{
+  "colors": {
+    "style": "default",
+    "seeds": {
+      "brand": "#3185FF",
+      "information": "#3185FF",
+      "success": "#27B15A",
+      "warning": "#F9B135",
+      "danger": "#E54444"
+    },
+    "semanticOverrides": { "light": {}, "dark": {} }
+  }
+}
+```
+
+旧的 `colors.primary/accent/success/warning/danger` JSON 结构会明确报错，需迁移到 `colors.seeds.*`。
+
 ### 全局主题
 
 建议在 App 初始化阶段完成全局配置：
@@ -401,9 +551,9 @@ EDSTheme.shared.configure { tokens in
 @main
 struct MyApp: App {
     init() {
-        EDSTheme.shared.configure { tokens in
-            tokens.colors.primary = .blue
-            tokens.spacing.lg = 22
+        EDSTheme.shared.configureTheme { theme in
+            theme.seeds.brand = .blue
+            theme.spacing.lg = 22
         }
     }
 
@@ -423,26 +573,26 @@ EDSTheme.shared.applyPreset(.orange)
 
 当前提供 `.default`、`.blue`、`.orange` 和 `.purple`，其中 `.blue` 是 `.default` 的别名。
 
-> **主题色只有一个字段：`tokens.colors.primary`。** 组件里所有"跟随主题色"的渲染（实心按钮、浅底按钮、侧边栏选中态、全局 `.tint()`）都读它。
-> `tokens.colors.accent` 与 `tokens.colors.accentSoft` 自 0.3.1 起已废弃，包内不再读取——写入它们不会有任何可见效果，变更主题色请改 `primary`。
+> `brand` 是品牌与主要操作的颜色来源；`information` 是信息提示的独立颜色来源。两者默认同为 `#3185FF`，可分别配置。
 
 ### 局部主题
 
-局部主题通过 SwiftUI Environment 传递值类型 `EDSDesignTokens`，不会修改 `EDSTheme.shared`：
+局部主题通过 SwiftUI Environment 传递值类型 `EDSThemeData`，不会修改 `EDSTheme.shared`：
 
 ```swift
 PurchaseCard()
     .easyDesign(.card, theme: .orange)
 ```
 
-也可以直接传入 Token：
+也可以直接传入完整主题：
 
 ```swift
-var customTokens = EDSDesignTokens()
-customTokens.colors.primary = .purple
+var customTheme = EDSThemeData()
+customTheme.seeds.brand = .purple
 
 PurchaseCard()
-    .easyDesign(.card, tokens: customTokens)
+    .easyDesignTheme(customTheme)
+    .easyDesign(.card)
 ```
 
 如果只希望传递主题，不应用任何 Easy 布局或表面：
@@ -452,7 +602,7 @@ ContentView()
     .easyDesignTheme(.purple)
 
 ContentView()
-    .easyDesignTheme(customTokens)
+    .easyDesignTheme(customTheme)
 ```
 
 ### 在自定义 View 中读取主题
@@ -476,7 +626,7 @@ struct CustomPanel: View {
 
 ```swift
 EDSTheme.shared.spacing.md
-EDSTheme.shared.colors.primary
+EDSTheme.shared.resolvedColors(for: .light).brandForeground
 ```
 
 V1 要求在 App 启动阶段配置全局主题，暂不承诺运行时修改 `EDSTheme.shared` 后自动刷新已显示的视图。
@@ -644,11 +794,10 @@ EDSProgressPanel(
 
 ### 直接使用 Token
 
-`EDSDesignTokens` 包含：
+`EDSThemeData` 包含颜色种子、语义覆盖和以下非颜色 `EDSDesignTokens`：
 
 | Token | 用途 |
 | --- | --- |
-| `colors` | 主题色、强调色、成功/警告/危险色及派生语义色 |
 | `spacing` | `xxs` 到 `xxxl` 的间距尺度 |
 | `radius` | `sm` 到 `xl` 的圆角尺度 |
 | `typography` | Hero、页面标题、Section、正文、Caption 和等宽字体 |

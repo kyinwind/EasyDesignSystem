@@ -1,10 +1,17 @@
 {
   "colors": {
-    "primary": "#3185FF",
-    "accent": "#3185FF",
-    "success": "#27B15A",
-    "warning": "#F9B135",
-    "danger": "#E54444"
+    "style": "default",
+    "seeds": {
+      "brand": "#3185FF",
+      "information": "#3185FF",
+      "success": "#27B15A",
+      "warning": "#F9B135",
+      "danger": "#E54444"
+    },
+    "semanticOverrides": {
+      "light": {},
+      "dark": {}
+    }
   },
   "spacing": {
     "xxs": 4,
@@ -59,5 +66,15 @@
   "heroGradient": {
     "startColor": "#3185FF",
     "endColor": "#0A6BFF"
+  },
+  "stroke": {
+    "hairline": 1
+  },
+  "shadow": {
+    "color": "#000000",
+    "opacity": 0.06,
+    "radius": 18,
+    "x": 0,
+    "y": 10
   }
 }

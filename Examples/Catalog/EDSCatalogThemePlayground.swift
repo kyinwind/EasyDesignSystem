@@ -33,7 +33,7 @@ public struct EDSCatalogThemeEntry: Identifiable, Hashable, Sendable {
     /// 不含 `accent`：0.3.1 起该字段已废弃、包内不再读取，展示它只会让人
     /// 误以为还有第二个主题色。
     public var swatchColors: [Color] {
-        let colors = preset.tokens.colors
+        let colors = preset.themeData.colors
         return [
             colors.primary,
             colors.success,
@@ -141,12 +141,6 @@ public enum EDSCatalogThemeCatalog {
     ) -> EDSCatalogThemeEntry {
         var tokens = EDSDesignTokens()
         let primary = Color(hexRGB: primaryHex)
-
-        tokens.colors.primary = primary
-        tokens.colors.accent  = primary
-        tokens.colors.success = Color(hexRGB: "#27B15A")
-        tokens.colors.warning = Color(hexRGB: "#F9B135")
-        tokens.colors.danger  = Color(hexRGB: "#E54444")
         tokens.heroGradient = EDSHeroGradient(
             startColor: primary,
             endColor: Color(hexRGB: endHex)
@@ -157,7 +151,7 @@ public enum EDSCatalogThemeCatalog {
             name: name,
             detail: "包外自定义 · \(primaryHex)",
             isBuiltIn: false,
-            preset: EDSPresetTheme(id: id, name: name, tokens: tokens)
+            preset: EDSPresetTheme(id: id, name: name, themeData: EDSThemeData(seeds: EDSColorSeeds(brand: primary), tokens: tokens))
         )
     }
 }
@@ -168,9 +162,11 @@ public enum EDSCatalogThemeCatalog {
 @MainActor
 public struct EDSThemeBar: View {
     @Binding private var selectionID: String
+    @Binding private var styleID: String
 
-    public init(selectionID: Binding<String>) {
+    public init(selectionID: Binding<String>, styleID: Binding<String>) {
         self._selectionID = selectionID
+        self._styleID = styleID
     }
 
     public var body: some View {
@@ -198,6 +194,10 @@ public struct EDSThemeBar: View {
                 .edsFont(.captionStrong)
                 .foregroundStyle(EDSTheme.shared.colors.textSecondary)
             themePicker
+            Text("色彩风格")
+                .edsFont(.captionStrong)
+                .foregroundStyle(EDSTheme.shared.colors.textSecondary)
+            stylePicker
             swatches
             Spacer(minLength: 0)
         }
@@ -205,6 +205,26 @@ public struct EDSThemeBar: View {
         .padding(.vertical, EDSTheme.shared.spacing.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(EDSTheme.shared.colors.cardBackground)
+    }
+
+    private var stylePicker: some View {
+        Picker("色彩风格", selection: $styleID) {
+            ForEach(EDSColorStyle.allBuiltIn) { style in
+                Text(displayName(for: style)).tag(style.id)
+            }
+        }
+        .labelsHidden()
+        .pickerStyle(.menu)
+        .fixedSize()
+        .accessibilityIdentifier("catalog.color-style.picker")
+    }
+
+    private func displayName(for style: EDSColorStyle) -> String {
+        switch style.id {
+        case EDSColorStyle.vivid.id: "浓烈"
+        case EDSColorStyle.elegant.id: "淡雅"
+        default: "默认"
+        }
     }
 
     private var themePicker: some View {
@@ -228,7 +248,14 @@ public struct EDSThemeBar: View {
 
     /// 当前主题的 5 个语义色，一眼看出语义色是否协调。
     private var swatches: some View {
-        let colors = EDSCatalogThemeCatalog.entry(id: selectionID)?.swatchColors ?? []
+        let colors: [Color] = {
+            guard let entry = EDSCatalogThemeCatalog.entry(id: selectionID),
+                  let style = try? EDSColorStyle.builtIn(id: styleID) else { return [] }
+            var theme = entry.preset.themeData
+            theme.colorStyle = style
+            let resolved = theme.colors
+            return [resolved.primary, resolved.success, resolved.warning, resolved.danger]
+        }()
         return HStack(spacing: 4) {
             ForEach(Array(colors.enumerated()), id: \.offset) { _, color in
                 Circle()
@@ -261,25 +288,45 @@ public struct EDSThemeBar: View {
 @MainActor
 public struct EDSThemePlayground<Content: View>: View {
     @State private var selectedID: String
+    @State private var selectedStyleID: String
     @State private var appliedRevision: Int = 0
     private let content: () -> Content
 
     public init(
         initialThemeID: String = EDSCatalogThemeCatalog.defaultThemeID,
+        initialStyleID: String = EDSColorStyle.default.id,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self._selectedID = State(initialValue: initialThemeID)
+        self._selectedStyleID = State(initialValue: initialStyleID)
         self.content = content
     }
 
     public var body: some View {
         VStack(spacing: 0) {
-            EDSThemeBar(selectionID: selectionBinding)
+            EDSThemeBar(selectionID: selectionBinding, styleID: styleBinding)
             Divider()
             content()
                 .id(appliedRevision)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .onAppear {
+            applySelection(themeID: selectedID, styleID: selectedStyleID)
+            appliedRevision += 1
+        }
+    }
+
+    private var styleBinding: Binding<String> {
+        Binding(
+            get: { selectedStyleID },
+            set: { newValue in
+                MainActor.assumeIsolated {
+                    selectedStyleID = newValue
+                    applySelection(themeID: selectedID, styleID: newValue)
+                    appliedRevision += 1
+                }
+            }
+        )
     }
 
     private var selectionBinding: Binding<String> {
@@ -288,7 +335,7 @@ public struct EDSThemePlayground<Content: View>: View {
             set: { newValue in
                 // Binding 的 set 由 SwiftUI 在主线程调用；Picker 交互必然在主线程。
                 MainActor.assumeIsolated {
-                    applyTheme(withID: newValue)   // ① 先落全局单例
+                    applySelection(themeID: newValue, styleID: selectedStyleID) // ① 先落全局单例
                     selectedID = newValue          // ② 再改 state
                     appliedRevision += 1           // ③ 触发 `.id` 变化 → 重建子树
                 }
@@ -297,8 +344,11 @@ public struct EDSThemePlayground<Content: View>: View {
     }
 
     @MainActor
-    private func applyTheme(withID id: String) {
-        guard let preset = EDSCatalogThemeCatalog.preset(id: id) else { return }
-        EDSTheme.shared.applyPreset(preset)
+    private func applySelection(themeID: String, styleID: String) {
+        guard let preset = EDSCatalogThemeCatalog.preset(id: themeID),
+              let style = try? EDSColorStyle.builtIn(id: styleID) else { return }
+        var theme = preset.themeData
+        theme.colorStyle = style
+        EDSTheme.shared.themeData = theme
     }
 }

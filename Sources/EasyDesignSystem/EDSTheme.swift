@@ -46,22 +46,19 @@ public final class EDSTheme: @unchecked Sendable {
     public static let shared = EDSTheme()
 
     private let tokensLock = NSLock()
-    private var storedTokens = EDSDesignTokens()
+    private var storedTheme = EDSThemeData()
+
+    public var themeData: EDSThemeData {
+        get { tokensLock.lock(); defer { tokensLock.unlock() }; return storedTheme }
+        set { tokensLock.lock(); storedTheme = newValue; tokensLock.unlock() }
+    }
 
     /// 当前生效的设计 Token。
     ///
     /// 保留原有可读写 API；内部以值拷贝和锁保护，避免主题导出、环境读取与启动期配置产生数据竞争。
     public var tokens: EDSDesignTokens {
-        get {
-            tokensLock.lock()
-            defer { tokensLock.unlock() }
-            return storedTokens
-        }
-        set {
-            tokensLock.lock()
-            storedTokens = newValue
-            tokensLock.unlock()
-        }
+        get { themeData.tokens }
+        set { var value = themeData; value.tokens = newValue; themeData = value }
     }
 
     private init() {}
@@ -83,6 +80,22 @@ public final class EDSTheme: @unchecked Sendable {
         tokens = updatedTokens
     }
 
+    /// Configures ColorScheme 2.0 seeds, semantic overrides and non-color tokens.
+    @MainActor
+    public func configureTheme(_ block: (inout EDSThemeData) -> Void) {
+        var updated = themeData
+        block(&updated)
+        themeData = updated
+    }
+
+    /// Switches the tonal style without changing seeds or non-color tokens.
+    @MainActor
+    public func applyColorStyle(_ style: EDSColorStyle) {
+        var updated = themeData
+        updated.colorStyle = style
+        themeData = updated
+    }
+
     /// 通过 JSON Data 配置 Token
     ///
     /// ```swift
@@ -92,7 +105,7 @@ public final class EDSTheme: @unchecked Sendable {
     @MainActor
     public func configure(jsonData: Data) throws {
         do {
-            tokens = try JSONDecoder().decode(EDSDesignTokens.self, from: jsonData)
+            themeData = try JSONDecoder().decode(EDSThemeData.self, from: jsonData)
         } catch {
             throw EDSThemeError.jsonDecodingFailed(error)
         }
@@ -146,13 +159,18 @@ public final class EDSTheme: @unchecked Sendable {
     /// ```
     @MainActor
     public func applyPreset(_ preset: EDSPresetTheme) {
-        tokens = preset.tokens
+        themeData = preset.themeData
     }
 
     // MARK: - 便捷访问别名
 
     /// 颜色 Token 快捷访问
-    public var colors: EDSColorTokens { tokens.colors }
+    public var seeds: EDSColorSeeds { themeData.seeds }
+    public var colors: EDSAdaptiveColors { themeData.colors }
+
+    public func resolvedColors(for brightness: EDSBrightness) -> EDSSemanticColors {
+        themeData.resolvedColors(for: brightness)
+    }
 
     /// 间距 Token 快捷访问
     public var spacing: EDSSpacingTokens { tokens.spacing }
@@ -184,7 +202,7 @@ public final class EDSTheme: @unchecked Sendable {
     public func exportJSON() throws -> Data {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        return try encoder.encode(tokens)
+        return try encoder.encode(themeData)
     }
 
     /// 将当前 Token 导出为格式化 JSON 字符串
@@ -205,12 +223,19 @@ public final class EDSTheme: @unchecked Sendable {
 public struct EDSPresetTheme: Identifiable, Hashable, Sendable {
     public let id: String
     public let name: String
-    public let tokens: EDSDesignTokens
+    public let themeData: EDSThemeData
+    public var tokens: EDSDesignTokens { themeData.tokens }
 
     public init(id: String, name: String, tokens: EDSDesignTokens) {
         self.id = id
         self.name = name
-        self.tokens = tokens
+        self.themeData = EDSThemeData(tokens: tokens)
+    }
+
+    public init(id: String, name: String, themeData: EDSThemeData) {
+        self.id = id
+        self.name = name
+        self.themeData = themeData
     }
 
     public func hash(into hasher: inout Hasher) {
@@ -235,13 +260,8 @@ public struct EDSPresetTheme: Identifiable, Hashable, Sendable {
     public static let `default` = EDSPresetTheme(
         id: "default",
         name: "默认蓝色",
-        tokens: {
-            var t = EDSDesignTokens()
-            t.colors.primary = Color(hexRGB: "#3185FF")
-            t.colors.accent  = Color(hexRGB: "#3185FF")
-            t.colors.success = Color(hexRGB: "#27B15A")
-            t.colors.warning = Color(hexRGB: "#F9B135")
-            t.colors.danger  = Color(hexRGB: "#FF3B30")
+        themeData: {
+            var t = EDSThemeData()
             t.heroGradient   = EDSDesignTokens.heroGradientBlue
             return t
         }()
@@ -254,13 +274,8 @@ public struct EDSPresetTheme: Identifiable, Hashable, Sendable {
     public static let orange = EDSPresetTheme(
         id: "orange",
         name: "橙色",
-        tokens: {
-            var t = EDSDesignTokens()
-            t.colors.primary = Color(hexRGB: "#FF6B00")
-            t.colors.accent  = Color(hexRGB: "#FF6B00")
-            t.colors.success = Color(hexRGB: "#27B15A")
-            t.colors.warning = Color(hexRGB: "#F9B135")
-            t.colors.danger  = Color(hexRGB: "#FF3B30")
+        themeData: {
+            var t = EDSThemeData(seeds: EDSColorSeeds(brand: Color(hexRGB: "#FF6B00"), information: Color(hexRGB: "#3185FF")))
             t.heroGradient   = EDSDesignTokens.heroGradientOrange
             return t
         }()
@@ -270,13 +285,8 @@ public struct EDSPresetTheme: Identifiable, Hashable, Sendable {
     public static let purple = EDSPresetTheme(
         id: "purple",
         name: "紫色",
-        tokens: {
-            var t = EDSDesignTokens()
-            t.colors.primary = Color(hexRGB: "#8B5CF6")
-            t.colors.accent  = Color(hexRGB: "#8B5CF6")
-            t.colors.success = Color(hexRGB: "#10B981")
-            t.colors.warning = Color(hexRGB: "#F59E0B")
-            t.colors.danger  = Color(hexRGB: "#FF3B30")
+        themeData: {
+            var t = EDSThemeData(seeds: EDSColorSeeds(brand: Color(hexRGB: "#8B5CF6"), information: Color(hexRGB: "#3185FF"), success: Color(hexRGB: "#10B981"), warning: Color(hexRGB: "#F59E0B")))
             t.heroGradient   = EDSDesignTokens.heroGradientPurple
             return t
         }()

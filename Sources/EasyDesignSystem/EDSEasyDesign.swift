@@ -247,13 +247,23 @@ private struct EDSEasyDesignModifier: ViewModifier {
     @Environment(\.edsTheme) private var inheritedTokens
     @Environment(\.edsInteractionProfile) private var interactionProfile
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.edsLayer) private var inheritedLayer
 
     let style: EDSEasyStyle
     let options: EDSEasyOptions
     let localTokens: EDSDesignTokens?
 
     func body(content: Content) -> some View {
-        let tokens = localTokens ?? inheritedTokens
+        let theme = localTokens.map {
+            EDSThemeData(seeds: inheritedTokens.seeds, semanticOverrides: inheritedTokens.semanticOverrides, tokens: $0)
+        } ?? inheritedTokens
+        let tokens = theme.tokens
+        let layer: EDSLayer = switch style {
+        case .page: .base
+        case .section, .content, .plain: inheritedLayer
+        case .group: EDSLayerResolver.nestedChild(of: inheritedLayer)
+        case .card: inheritedLayer == .base ? .raised : EDSLayerResolver.nestedChild(of: inheritedLayer)
+        }
         let recipe = EDSEasyRecipe.resolve(
             style: style,
             options: options,
@@ -265,11 +275,12 @@ private struct EDSEasyDesignModifier: ViewModifier {
         content
             .modifier(EDSEasyPaddingModifier(recipe: recipe))
             .modifier(EDSEasyWidthModifier(width: recipe.width))
-            .modifier(EDSEasySurfaceModifier(recipe: recipe, tokens: tokens))
-            .environment(\.edsTheme, tokens)
-            .tint(tokens.colors.primary)
+            .modifier(EDSEasySurfaceModifier(recipe: recipe, theme: theme))
+            .environment(\.edsTheme, theme)
+            .environment(\.edsLayer, layer)
+            .tint(theme.colors.primary)
             .edsFont(.body, tokens: tokens.typography)
-            .foregroundStyle(tokens.colors.textPrimary)
+            .foregroundStyle(theme.colors.textPrimary)
     }
 }
 
@@ -311,7 +322,7 @@ private struct EDSEasyWidthModifier: ViewModifier {
 
 private struct EDSEasySurfaceModifier: ViewModifier {
     let recipe: EDSEasyRecipe
-    let tokens: EDSDesignTokens
+    let theme: EDSThemeData
 
     @ViewBuilder
     func body(content: Content) -> some View {
@@ -319,11 +330,11 @@ private struct EDSEasySurfaceModifier: ViewModifier {
         case .inherited:
             content
         case .page:
-            surface(content: content, color: tokens.colors.pageBackground)
+            surface(content: content, color: theme.colors.pageBackground)
         case .subtle:
-            surface(content: content, color: tokens.colors.subtleFill)
+            surface(content: content, color: theme.colors.subtleFill)
         case .card:
-            surface(content: content, color: tokens.colors.cardBackground)
+            surface(content: content, color: theme.colors.cardBackground)
         }
     }
 
@@ -332,9 +343,9 @@ private struct EDSEasySurfaceModifier: ViewModifier {
             EDSSurfaceConfiguration(
                 background: AnyShapeStyle(color),
                 cornerRadius: recipe.cornerRadius,
-                borderColor: recipe.showsBorder ? tokens.colors.border : nil,
-                borderWidth: recipe.showsBorder ? tokens.stroke.hairline : 0,
-                shadow: recipe.showsShadow ? tokens.shadow : nil
+                borderColor: recipe.showsBorder ? theme.colors.border : nil,
+                borderWidth: recipe.showsBorder ? theme.stroke.hairline : 0,
+                shadow: recipe.showsShadow ? theme.shadow : nil
             )
         )
     }

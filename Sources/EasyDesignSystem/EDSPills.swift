@@ -158,7 +158,7 @@ public struct EDSPill: View {
 
     public var body: some View {
         let metrics = EDSResolvedMetrics.resolve(
-            tokens: theme,
+            tokens: theme.tokens,
             profile: interactionProfile,
             horizontalSizeClass: horizontalSizeClass
         )

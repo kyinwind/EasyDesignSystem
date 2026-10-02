@@ -80,7 +80,10 @@ private struct EDSSystemColorWell: View {
 /// - 导出当前配置为 JSON 文件，供 `EDSTheme.shared.configure(jsonResource:)` 使用
 ///
 public struct EDSDesignSystemPreview: View {
-    @State private var draftColors: EDSColorTokens = EDSTheme.shared.colors
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var draftSeeds: EDSColorSeeds = EDSTheme.shared.seeds
+    @State private var draftSemanticOverrides: EDSSemanticColorOverrides = EDSTheme.shared.themeData.semanticOverrides
+    @State private var draftColorStyle: EDSColorStyle = EDSTheme.shared.themeData.colorStyle
     @State private var draftSpacing: EDSSpacingTokens = EDSTheme.shared.spacing
     @State private var draftRadius: EDSRadiusTokens = EDSTheme.shared.radius
     @State private var draftTypography: EDSTypographyTokens = EDSTheme.shared.typography
@@ -133,7 +136,7 @@ public struct EDSDesignSystemPreview: View {
         }
         .fileExporter(
             isPresented: $showSavePanel,
-            document: EDSThemeJSONDocument(tokens: buildDraftTokens()),
+            document: EDSThemeJSONDocument(theme: buildDraftTheme()),
             contentType: .json,
             defaultFilename: "MyAppTheme"
         ) { result in
@@ -154,15 +157,24 @@ public struct EDSDesignSystemPreview: View {
 
     // MARK: - 构建 Draft Tokens
 
-    private func buildDraftTokens() -> EDSDesignTokens {
-        var t = EDSDesignTokens()
-        t.colors = draftColors
+    private func buildDraftTheme() -> EDSThemeData {
+        var theme = EDSThemeData(
+            seeds: draftSeeds,
+            semanticOverrides: draftSemanticOverrides,
+            colorStyle: draftColorStyle
+        )
+        var t = theme.tokens
         t.spacing = draftSpacing
         t.radius = draftRadius
         t.typography = draftTypography
         t.controlSize = draftControlSize
         t.heroGradient = draftHeroGradient
-        return t
+        theme.tokens = t
+        return theme
+    }
+
+    private var previewColors: EDSSemanticColors {
+        buildDraftTheme().resolvedColors(for: colorScheme == .dark ? .dark : .light)
     }
 
     // MARK: - 预设切换
@@ -176,7 +188,7 @@ public struct EDSDesignSystemPreview: View {
         }
         .onChange(of: selectedPreset) { oldValue, newValue in
             guard let preset = newValue else { return }
-            loadTokens(preset.tokens)
+            loadTheme(preset.themeData)
         }
     }
 
@@ -188,11 +200,11 @@ public struct EDSDesignSystemPreview: View {
                 // 颜色预览
                 previewSection("颜色") {
                     VStack(alignment: .leading, spacing: 8) {
-                        colorSwatchRow("Primary", color: draftColors.primary)
-                        colorSwatchRow("Accent（废弃）", color: draftColors.accent)
-                        colorSwatchRow("Success", color: draftColors.success)
-                        colorSwatchRow("Warning", color: draftColors.warning)
-                        colorSwatchRow("Danger", color: draftColors.danger)
+                        colorSwatchRow("Brand", color: previewColors.brandSurfaceStrong)
+                        colorSwatchRow("Information", color: previewColors.informationSurfaceStrong)
+                        colorSwatchRow("Success", color: previewColors.successSurfaceStrong)
+                        colorSwatchRow("Warning", color: previewColors.warningSurfaceStrong)
+                        colorSwatchRow("Danger", color: previewColors.dangerSurfaceStrong)
                     }
                 }
 
@@ -219,16 +231,16 @@ public struct EDSDesignSystemPreview: View {
                     VStack(alignment: .leading, spacing: draftSpacing.xs) {
                         Text("页面大标题 Hero")
                             .font(previewFont(draftTypography.heroSize, weight: draftTypography.heroWeight))
-                            .foregroundStyle(draftColors.primary)
+                            .foregroundStyle(previewColors.brandForeground)
                         Text("章节标题 Section")
                             .font(previewFont(draftTypography.sectionTitleSize, weight: draftTypography.sectionTitleWeight))
-                            .foregroundStyle(draftColors.primary)
+                            .foregroundStyle(previewColors.brandForeground)
                         Text("正文内容 Body")
                             .font(previewFont(draftTypography.bodySize, weight: draftTypography.bodyWeight))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(previewColors.foregroundPrimary)
                         Text("说明文字 Caption")
                             .font(previewFont(draftTypography.captionSize, weight: draftTypography.captionWeight))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(previewColors.foregroundSecondary)
                     }
                 }
 
@@ -264,7 +276,7 @@ public struct EDSDesignSystemPreview: View {
             }
             .padding(EDSTheme.shared.spacing.lg)
         }
-        .background(EDSTheme.shared.colors.pageBackground)
+        .background(previewColors.surfacePage)
     }
 
     private func previewSection(_ title: String, @ViewBuilder content: () -> some View) -> some View {
@@ -296,13 +308,11 @@ public struct EDSDesignSystemPreview: View {
 
     private var colorEditor: some View {
         editorSection("颜色") {
-            colorRow("Primary", color: $draftColors.primary)
-            // 0.3.1 起 `accent` 已废弃：包内任何渲染都不再读取它，改这里不会有可见效果。
-            // 字段本身保留是为了兼容既有主题 JSON，故编辑器仍可查看与编辑。
-            colorRow("Accent（废弃）", color: $draftColors.accent)
-            colorRow("Success", color: $draftColors.success)
-            colorRow("Warning", color: $draftColors.warning)
-            colorRow("Danger", color: $draftColors.danger)
+            colorRow("Brand Seed", color: $draftSeeds.brand)
+            colorRow("Information Seed", color: $draftSeeds.information)
+            colorRow("Success", color: $draftSeeds.success)
+            colorRow("Warning", color: $draftSeeds.warning)
+            colorRow("Danger", color: $draftSeeds.danger)
             colorRow("Hero Start", color: $draftHeroGradient.startColor)
             colorRow("Hero End", color: $draftHeroGradient.endColor)
         }
@@ -459,7 +469,7 @@ public struct EDSDesignSystemPreview: View {
     private func roundedRectPreview(label: String, radius: CGFloat) -> some View {
         VStack(spacing: 4) {
             RoundedRectangle(cornerRadius: radius)
-                .fill(draftColors.primary)
+                .fill(previewColors.brandSurfaceStrong)
                 .frame(width: 48, height: 48)
             Text("\(Int(radius))")
                 .font(.system(size: 10, design: .monospaced))
@@ -473,85 +483,85 @@ public struct EDSDesignSystemPreview: View {
     private func previewPrimaryButton() -> some View {
         Button("主要") {}
             .font(.system(size: draftTypography.bodyStrongSize, weight: .semibold))
-            .foregroundColor(.white)
+            .foregroundColor(previewColors.brandOnStrong)
             .frame(height: draftControlSize.buttonHeight)
             .padding(.horizontal, draftSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: draftRadius.md)
-                    .fill(draftColors.primary)
+                    .fill(previewColors.brandSurfaceStrong)
             )
     }
 
     private func previewSecondaryButton() -> some View {
         Button("次要") {}
             .font(.system(size: draftTypography.bodyStrongSize, weight: .semibold))
-            .foregroundColor(draftColors.primary)
+            .foregroundColor(previewColors.brandForeground)
             .frame(height: draftControlSize.buttonHeight)
             .padding(.horizontal, draftSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: draftRadius.md)
-                    .stroke(draftColors.primary, lineWidth: 1.5)
+                    .stroke(previewColors.brandBorder, lineWidth: 1.5)
             )
     }
 
     private func previewSoftButton() -> some View {
         Button("柔和") {}
             .font(.system(size: draftTypography.bodyStrongSize, weight: .semibold))
-            .foregroundColor(draftColors.primary)
+            .foregroundColor(previewColors.brandForeground)
             .frame(height: draftControlSize.buttonHeight)
             .padding(.horizontal, draftSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: draftRadius.md)
-                    .fill(draftColors.primary.opacity(0.12))
+                    .fill(previewColors.brandSurface)
             )
     }
 
     private func previewDangerButton() -> some View {
         Button("危险") {}
             .font(.system(size: draftTypography.bodyStrongSize, weight: .semibold))
-            .foregroundColor(.white)
+            .foregroundColor(previewColors.dangerOnStrong)
             .frame(height: draftControlSize.buttonHeight)
             .padding(.horizontal, draftSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: draftRadius.md)
-                    .fill(draftColors.danger)
+                    .fill(previewColors.dangerSurfaceStrong)
             )
     }
 
     private func previewAccentBadge() -> some View {
         Text("Pro")
             .font(.system(size: draftTypography.captionStrongSize, weight: .semibold))
-            .foregroundColor(draftColors.primary)
+            .foregroundColor(previewColors.brandForeground)
             .padding(.horizontal, draftSpacing.xs)
             .padding(.vertical, draftSpacing.xxs)
-            .background(Capsule().fill(draftColors.primary.opacity(0.12)))
+            .background(Capsule().fill(previewColors.brandSurface))
     }
 
     private func previewSuccessBadge() -> some View {
         Text("成功")
             .font(.system(size: draftTypography.captionStrongSize, weight: .semibold))
-            .foregroundColor(draftColors.success)
+            .foregroundColor(previewColors.successForeground)
             .padding(.horizontal, draftSpacing.xs)
             .padding(.vertical, draftSpacing.xxs)
-            .background(Capsule().fill(draftColors.success.opacity(0.12)))
+            .background(Capsule().fill(previewColors.successSurface))
     }
 
     private func previewWarningBadge() -> some View {
         Text("警告")
             .font(.system(size: draftTypography.captionStrongSize, weight: .semibold))
-            .foregroundColor(draftColors.warning)
+            .foregroundColor(previewColors.warningForeground)
             .padding(.horizontal, draftSpacing.xs)
             .padding(.vertical, draftSpacing.xxs)
-            .background(Capsule().fill(draftColors.warning.opacity(0.12)))
+            .background(Capsule().fill(previewColors.warningSurface))
     }
 
     private func previewDangerBadge() -> some View {
         Text("危险")
             .font(.system(size: draftTypography.captionStrongSize, weight: .semibold))
-            .foregroundColor(draftColors.danger)
+            .foregroundColor(previewColors.dangerForeground)
             .padding(.horizontal, draftSpacing.xs)
             .padding(.vertical, draftSpacing.xxs)
-            .background(Capsule().fill(draftColors.danger.opacity(0.12)))
+            .background(Capsule().fill(previewColors.dangerSurface))
     }
 
     private func sidebarPreview() -> some View {
@@ -562,7 +572,7 @@ public struct EDSDesignSystemPreview: View {
                 .onTapGesture { previewSelection = "settings" }
         }
         .padding(draftSpacing.sm)
-        .background(EDSTheme.shared.colors.pageBackground)
+        .background(previewColors.surfaceSunken)
         .clipShape(RoundedRectangle(cornerRadius: draftRadius.md))
         .frame(width: 160)
     }
@@ -571,12 +581,12 @@ public struct EDSDesignSystemPreview: View {
         HStack(spacing: draftSpacing.sm) {
             Image(systemName: icon)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(isSelected ? draftColors.primary : .secondary)
+                .foregroundStyle(isSelected ? previewColors.brandForeground : previewColors.foregroundSecondary)
                 .frame(width: 20)
 
             Text(label)
                 .font(.system(size: draftTypography.body15Size))
-                .foregroundStyle(isSelected ? draftColors.primary : .primary)
+                .foregroundStyle(isSelected ? previewColors.brandForeground : previewColors.foregroundPrimary)
 
             Spacer()
         }
@@ -584,7 +594,7 @@ public struct EDSDesignSystemPreview: View {
         .padding(.vertical, draftSpacing.xs)
         .background(
             RoundedRectangle(cornerRadius: draftRadius.sm)
-                .fill(isSelected ? draftColors.primary.opacity(0.12) : Color.clear)
+                .fill(isSelected ? previewColors.brandSurface : Color.clear)
         )
     }
 
@@ -613,16 +623,16 @@ public struct EDSDesignSystemPreview: View {
         VStack(alignment: .leading, spacing: draftSpacing.xs) {
             Text("卡片标题")
                 .font(.system(size: draftTypography.sectionTitleSize, weight: .semibold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(previewColors.foregroundPrimary)
             Text("卡片内容，浅灰色背景，带圆角")
                 .font(.system(size: draftTypography.bodySize))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(previewColors.foregroundSecondary)
         }
         .padding(draftSpacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: draftRadius.md)
-                .fill(Color(.secondarySystemFill))
+                .fill(previewColors.surfaceSunken)
         )
     }
 
@@ -631,15 +641,15 @@ public struct EDSDesignSystemPreview: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("设置项标题")
                     .font(.system(size: draftTypography.bodyStrongSize, weight: .semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(previewColors.foregroundPrimary)
                 Text("设置项说明文字")
                     .font(.system(size: draftTypography.captionSize))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(previewColors.foregroundSecondary)
             }
             Spacer()
             Text("值")
                 .font(.system(size: draftTypography.bodyStrongSize, weight: .semibold))
-                .foregroundStyle(draftColors.primary)
+                .foregroundStyle(previewColors.brandForeground)
         }
         .padding(.vertical, draftSpacing.sm)
         .frame(minHeight: draftControlSize.rowMinHeight)
@@ -648,12 +658,15 @@ public struct EDSDesignSystemPreview: View {
     // MARK: - 操作方法
 
     private func resetToTheme() {
-        loadTokens(EDSTheme.shared.tokens)
+        loadTheme(EDSTheme.shared.themeData)
         selectedPreset = nil
     }
 
-    private func loadTokens(_ tokens: EDSDesignTokens) {
-        draftColors = tokens.colors
+    private func loadTheme(_ theme: EDSThemeData) {
+        let tokens = theme.tokens
+        draftSeeds = theme.seeds
+        draftSemanticOverrides = theme.semanticOverrides
+        draftColorStyle = theme.colorStyle
         draftSpacing = tokens.spacing
         draftRadius = tokens.radius
         draftTypography = tokens.typography
@@ -662,13 +675,17 @@ public struct EDSDesignSystemPreview: View {
     }
 
     private func applyToTheme() {
-        EDSTheme.shared.configure { tokens in
-            tokens.colors = draftColors
+        EDSTheme.shared.configureTheme { theme in
+            theme.seeds = draftSeeds
+            theme.semanticOverrides = draftSemanticOverrides
+            theme.colorStyle = draftColorStyle
+            var tokens = theme.tokens
             tokens.spacing = draftSpacing
             tokens.radius = draftRadius
             tokens.typography = draftTypography
             tokens.controlSize = draftControlSize
             tokens.heroGradient = draftHeroGradient
+            theme.tokens = tokens
         }
     }
 
@@ -685,10 +702,10 @@ public struct EDSThemeJSONDocument: FileDocument {
 
     public let data: Data
 
-    public init(tokens: EDSDesignTokens) {
+    public init(theme: EDSThemeData) {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        self.data = (try? encoder.encode(tokens)) ?? Data()
+        self.data = (try? encoder.encode(theme)) ?? Data()
     }
 
     public init(configuration: ReadConfiguration) throws {

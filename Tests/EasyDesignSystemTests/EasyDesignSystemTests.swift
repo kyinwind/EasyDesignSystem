@@ -83,14 +83,14 @@ final class EasyDesignSystemTests: XCTestCase {
     func testPartialJSONUsesTokenDefaults() throws {
         let data = try XCTUnwrap("""
         {
-          "colors": { "primary": "#FF6B00" },
+          "colors": { "seeds": { "brand": "#FF6B00" } },
           "shadow": { "opacity": 0.08 }
         }
         """.data(using: .utf8))
 
         try EDSTheme.shared.configure(jsonData: data)
 
-        XCTAssertEqual(EDSTheme.shared.colors.primary.toHex(), "#FF6B00")
+        XCTAssertEqual(EDSTheme.shared.seeds.brand.toHex(), "#FF6B00")
         XCTAssertEqual(EDSTheme.shared.spacing.md, 16)
         XCTAssertEqual(EDSTheme.shared.shadow.opacity, 0.08)
         XCTAssertEqual(EDSTheme.shared.adaptiveLayout.minimumTouchTarget, 44)
@@ -147,7 +147,7 @@ final class EasyDesignSystemTests: XCTestCase {
 
         var local = global
         local.spacing.md = 29
-        environment.edsTheme = local
+        environment.edsTheme = EDSThemeData(tokens: local)
 
         XCTAssertEqual(environment.edsTheme.spacing.md, 29)
         XCTAssertEqual(EDSTheme.shared.tokens.spacing.md, 17)
@@ -363,22 +363,15 @@ final class EasyDesignSystemTests: XCTestCase {
     /// 若哪天有人把 `accentSoft` 改回读 `accent`，本测试立刻失败。
     func testThemeColorReadsFollowPrimaryNotAccent() {
         let orange = Color(hexRGB: "#FF6B00")
-        let blue = Color(hexRGB: "#3185FF")
+        let theme = EDSThemeData(seeds: EDSColorSeeds(brand: orange))
+        let resolved = theme.resolvedColors(for: .light)
+        XCTAssertEqual(resolved.brandForeground.toHex(), "#8D3800")
+        XCTAssertEqual(resolved.brandSurface.toHex(), "#FFEDE6")
 
-        var tokens = EDSDesignTokens()
-        tokens.colors.primary = orange
-        tokens.colors.accent = blue          // 保持默认蓝，模拟"只改了 primary"
-
-        // 派生浅底色跟随 primary
-        XCTAssertEqual(tokens.colors.primarySoft, orange.opacity(0.12))
-        XCTAssertEqual(tokens.colors.accentSoft, tokens.colors.primarySoft)
-        XCTAssertEqual(tokens.colors.accentSoft.toHex(), "#FF6B00")
-
-        // 浅底档按钮：底色与文字必须同源，否则就是那个"蓝底橙字"的历史 bug
         let soft = EDSButtonAppearance(emphasis: .soft, tone: .accent, size: .regular)
-        let visual = soft.resolved(tokens: tokens)
-        XCTAssertEqual(visual.background, orange.opacity(0.12))
-        XCTAssertEqual(visual.foreground, orange)
+        let visual = soft.resolved(theme: theme)
+        XCTAssertEqual(visual.background?.toHex(), resolved.brandSurface.toHex())
+        XCTAssertEqual(visual.foreground.toHex(), resolved.brandForeground.toHex())
     }
 
     /// 预设路径不受 A1 影响：三个内置预设的 primary 与 accent 取值仍然相同。
@@ -421,27 +414,28 @@ final class EasyDesignSystemTests: XCTestCase {
     /// 杨哥定版（2026-09-22 恢复）：按 Material Design 3 outlined 配方重做——
     /// 边框用中性 `colors.border`、不染主题色，强调全靠文字色。
     func testOutlineResolvesToHairlineNeutralBorderWithToneText() {
-        let tokens = EDSDesignTokens()
+        let theme = EDSThemeData()
+        let colors = theme.resolvedColors(for: .light)
 
         for tone in EDSButton.Tone.allCases {
             let visual = EDSButtonAppearance(
                 emphasis: .outline, tone: tone, size: .regular
-            ).resolved(tokens: tokens)
+            ).resolved(theme: theme)
 
             let toneColor: Color
             switch tone {
-            case .accent:  toneColor = tokens.colors.primary
-            case .neutral: toneColor = Color.primary
-            case .danger:  toneColor = tokens.colors.danger
-            case .success: toneColor = tokens.colors.success
-            case .warning: toneColor = tokens.colors.warning
+            case .accent:  toneColor = colors.brandForeground
+            case .neutral: toneColor = colors.foregroundPrimary
+            case .danger:  toneColor = colors.dangerForeground
+            case .success: toneColor = colors.successForeground
+            case .warning: toneColor = colors.warningForeground
             }
 
-            let expectedForeground: Color = tone == .success ? tokens.colors.textPrimary : toneColor
-            XCTAssertEqual(visual.foreground, expectedForeground, "tone=\(tone.rawValue) 文字色不一致")
+            let expectedForeground: Color = toneColor
+            XCTAssertEqual(visual.foreground.toHex(), expectedForeground.toHex(), "tone=\(tone.rawValue) 文字色不一致")
             XCTAssertNil(visual.background, "tone=\(tone.rawValue) outline 必须透明底")
-            XCTAssertEqual(visual.borderColor, tokens.colors.border, "tone=\(tone.rawValue) 边框必须为中性 border 色")
-            XCTAssertEqual(visual.borderWidth, tokens.stroke.hairline, "tone=\(tone.rawValue) 边框宽度必须为 hairline")
+            XCTAssertEqual(visual.borderColor?.toHex(), colors.borderDefault.toHex(), "tone=\(tone.rawValue) 边框必须为中性 border 色")
+            XCTAssertEqual(visual.borderWidth, theme.stroke.hairline, "tone=\(tone.rawValue) 边框宽度必须为 hairline")
         }
     }
 
@@ -451,28 +445,38 @@ final class EasyDesignSystemTests: XCTestCase {
     /// 文字同色系且压深 30% 是杨哥定版（2026-09-22；纯黑字丢失色彩身份，
     /// 纯 tone 字则与 soft 拉不开文字层次）。neutral 无彩度，维持 textPrimary。
     func testMediumResolvesToQuarterToneFillWithDarkenedToneText() {
-        let tokens = EDSDesignTokens()
+        let theme = EDSThemeData()
+        let colors = theme.resolvedColors(for: .light)
 
         for tone in EDSButton.Tone.allCases {
             let visual = EDSButtonAppearance(
                 emphasis: .medium, tone: tone, size: .regular
-            ).resolved(tokens: tokens)
+            ).resolved(theme: theme)
 
             let toneColor: Color
             switch tone {
-            case .accent:  toneColor = tokens.colors.primary
-            case .neutral: toneColor = Color.primary
-            case .danger:  toneColor = tokens.colors.danger
-            case .success: toneColor = tokens.colors.success
-            case .warning: toneColor = tokens.colors.warning
+            case .accent:  toneColor = colors.brandForeground
+            case .neutral: toneColor = colors.foregroundPrimary
+            case .danger:  toneColor = colors.dangerForeground
+            case .success: toneColor = colors.successForeground
+            case .warning: toneColor = colors.warningForeground
             }
 
-            XCTAssertEqual(visual.background, toneColor.opacity(0.25), "tone=\(tone.rawValue)")
-
-            let expectedForeground: Color = tone == .neutral
-                ? tokens.colors.textPrimary
-                : EDSPlatformColorBridge.darkened(toneColor, by: 0.7) ?? tokens.colors.textPrimary
-            XCTAssertEqual(visual.foreground, expectedForeground, "tone=\(tone.rawValue)")
+            let expectedBackground: Color
+            switch tone {
+            case .neutral:
+                expectedBackground = EDSInteractionResolver.neutralSurface(brightness: .light, state: .rest)
+            case .accent:
+                expectedBackground = EDSInteractionResolver.mediumSurface(family: .brand, seeds: theme.seeds, brightness: .light, state: .rest)
+            case .danger:
+                expectedBackground = EDSInteractionResolver.mediumSurface(family: .danger, seeds: theme.seeds, brightness: .light, state: .rest)
+            case .success:
+                expectedBackground = EDSInteractionResolver.mediumSurface(family: .success, seeds: theme.seeds, brightness: .light, state: .rest)
+            case .warning:
+                expectedBackground = EDSInteractionResolver.mediumSurface(family: .warning, seeds: theme.seeds, brightness: .light, state: .rest)
+            }
+            XCTAssertEqual(visual.background?.toHex(), expectedBackground.toHex(), "tone=\(tone.rawValue)")
+            XCTAssertEqual(visual.foreground.toHex(), toneColor.toHex(), "tone=\(tone.rawValue)")
 
             XCTAssertNil(visual.borderColor)
         }
