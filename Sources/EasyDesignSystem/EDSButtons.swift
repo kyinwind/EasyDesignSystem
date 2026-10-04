@@ -223,6 +223,8 @@ public struct EDSButton: View {
         case soft
         /// 实心危险色。等价于 `filled + danger + regular`。
         case danger
+        /// 危险色浅底。等价于 `soft + danger + regular`。
+        case dangerSoft
         /// 已完成（实心绿底 + ✓）。等价于 `filled + success + regular`。
         ///
         /// 取实心档而非浅底档：12% 浅绿在浅色外观下几乎与页面底色融为一体，
@@ -369,7 +371,7 @@ public struct EDSButton: View {
         switch role {
         case .done:
             return "checkmark"
-        case .primary, .secondary, .soft, .danger, .normal:
+        case .primary, .secondary, .soft, .danger, .dangerSoft, .normal:
             return nil
         }
     }
@@ -407,6 +409,8 @@ extension EDSButton.Role {
             return EDSButtonAppearance(emphasis: .soft, tone: .accent, size: .regular)
         case .danger:
             return EDSButtonAppearance(emphasis: .filled, tone: .danger, size: .regular)
+        case .dangerSoft:
+            return EDSButtonAppearance(emphasis: .soft, tone: .danger, size: .regular)
         case .done:
             return EDSButtonAppearance(emphasis: .filled, tone: .success, size: .regular)
         case .normal:

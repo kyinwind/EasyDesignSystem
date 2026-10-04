@@ -85,10 +85,10 @@ final class EDSActionBarTests: XCTestCase {
     }
 
     func testRoleCustomKeepsPresetStyleAndUsesActionBarSize() {
-        let item = EDSActionItem.custom(title: "导出", role: .danger) {}
+        let item = EDSActionItem.custom(title: "移除", role: .dangerSoft) {}
         let appearance = item.resolvedAppearance(defaultSize: .large)
 
-        XCTAssertEqual(appearance.emphasis, .filled)
+        XCTAssertEqual(appearance.emphasis, .soft)
         XCTAssertEqual(appearance.tone, .danger)
         XCTAssertEqual(appearance.size, .large)
     }

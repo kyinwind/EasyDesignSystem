@@ -722,6 +722,7 @@ EDSButton("开始处理", emphasis: .filled, size: .large) {}
 | `.secondary` | `medium` + `accent` + `regular` |
 | `.soft` | `soft` + `accent` + `regular` |
 | `.danger` | `filled` + `danger` + `regular` |
+| `.dangerSoft` | `soft` + `danger` + `regular` |
 | `.done` | `filled` + `success` + `regular`，并自动补 `checkmark` 图标 |
 | `.normal` | `soft` + `neutral` + `regular`（灰底次级操作，工具栏常用档） |
 

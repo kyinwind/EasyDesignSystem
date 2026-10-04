@@ -73,6 +73,7 @@ public struct EDSButtonShowcase: View {
                 EDSButton("常规灰底", role: .normal) {}
                 EDSButton("轻量操作", role: .soft) {}
                 EDSButton("危险操作", role: .danger) {}
+                EDSButton("轻量危险", role: .dangerSoft) {}
                 EDSButton("已完成", role: .done) {}
                 EDSButton("零参数默认") {}
             }
@@ -194,6 +195,11 @@ public struct EDSButtonShowcase: View {
                     "danger",
                     EDSButton("删除", role: .danger) {},
                     EDSButton("删除", emphasis: .filled, tone: .danger, size: .regular) {}
+                )
+                equivalenceRow(
+                    "dangerSoft",
+                    EDSButton("移除", role: .dangerSoft) {},
+                    EDSButton("移除", emphasis: .soft, tone: .danger, size: .regular) {}
                 )
                 equivalenceRow(
                     "done",

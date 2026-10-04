@@ -311,6 +311,13 @@ final class EasyDesignSystemTests: XCTestCase {
         XCTAssertEqual(appearance.size, .regular)
     }
 
+    func testDangerSoftRoleResolvesToSoftDanger() {
+        XCTAssertEqual(
+            EDSButton.Role.dangerSoft.appearance,
+            EDSButtonAppearance(emphasis: .soft, tone: .danger, size: .regular)
+        )
+    }
+
     /// `.done` 的改档不波及四个既有 role。
     func testLegacyRolesKeepTheirAppearance() {
         XCTAssertEqual(
@@ -346,11 +353,11 @@ final class EasyDesignSystemTests: XCTestCase {
         XCTAssertNotEqual(visual.background?.toHex(), "#FFFFFF")
     }
 
-    /// allCases 必须包含 normal（Role 表 6 条）。
+    /// allCases 必须包含全部 Role 预设。
     func testRoleAllCasesIncludeNormal() {
         XCTAssertEqual(
             Set(EDSButton.Role.allCases.map(\.rawValue)),
-            ["primary", "secondary", "soft", "danger", "done", "normal"]
+            ["primary", "secondary", "soft", "danger", "dangerSoft", "done", "normal"]
         )
     }
 
