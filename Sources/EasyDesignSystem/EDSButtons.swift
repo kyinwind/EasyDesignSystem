@@ -231,7 +231,7 @@ public struct EDSButton: View {
         /// 作为"点击进去有内容"的入口体量不足。实心绿同时解决了与 `EDSBadge(.success)`
         /// 的体量混淆——两者不再只是底色深浅之差。
         case done
-        /// 常规灰底（12% 灰底 + 深字）。等价于 `soft + neutral + regular`。
+        /// 常规中灰底 + 深字。等价于 `medium + neutral + regular`。
         ///
         /// 灰底次级按钮是最常见的重复场景（工具栏"检测对话/导出/打开目录"一类），
         /// 杨哥定版 2026-09-22 收进 Role 表。

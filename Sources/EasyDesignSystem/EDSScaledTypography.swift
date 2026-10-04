@@ -13,7 +13,8 @@ public enum EDSFontRole {
     case monoCaption
 }
 
-private struct EDSFontSpecification {
+struct EDSFontSpecification {
+    let size: CGFloat
     let weight: Font.Weight
     let textStyle: Font.TextStyle
     let design: Font.Design
@@ -21,28 +22,23 @@ private struct EDSFontSpecification {
 
 private struct EDSScaledFontModifier: ViewModifier {
     let specification: EDSFontSpecification
+    @ScaledMetric private var scaledSize: CGFloat
+
+    init(specification: EDSFontSpecification) {
+        self.specification = specification
+        self._scaledSize = ScaledMetric(
+            wrappedValue: specification.size,
+            relativeTo: specification.textStyle
+        )
+    }
 
     func body(content: Content) -> some View {
         content
-            .font(semanticFont(for: specification.textStyle))
-            .fontDesign(specification.design)
-            .fontWeight(specification.weight)
-    }
-
-    private func semanticFont(for style: Font.TextStyle) -> Font {
-        switch style {
-        case .largeTitle: .largeTitle
-        case .title: .title
-        case .title2: .title2
-        case .title3: .title3
-        case .headline: .headline
-        case .subheadline: .subheadline
-        case .callout: .callout
-        case .caption: .caption
-        case .caption2: .caption2
-        case .footnote: .footnote
-        default: .body
-        }
+            .font(.system(
+                size: scaledSize,
+                weight: specification.weight,
+                design: specification.design
+            ))
     }
 }
 
@@ -66,29 +62,29 @@ public extension View {
     }
 }
 
-private extension EDSTypographyTokens {
+extension EDSTypographyTokens {
     func specification(for role: EDSFontRole) -> EDSFontSpecification {
         switch role {
         case .hero:
-            EDSFontSpecification(weight: fontWeight(heroWeight), textStyle: .largeTitle, design: .rounded)
+            EDSFontSpecification(size: heroSize, weight: fontWeight(heroWeight), textStyle: .largeTitle, design: .rounded)
         case .pageTitle:
-            EDSFontSpecification(weight: fontWeight(pageTitleWeight), textStyle: .headline, design: .rounded)
+            EDSFontSpecification(size: pageTitleSize, weight: fontWeight(pageTitleWeight), textStyle: .headline, design: .rounded)
         case .sectionTitle:
-            EDSFontSpecification(weight: fontWeight(sectionTitleWeight), textStyle: .subheadline, design: .default)
+            EDSFontSpecification(size: sectionTitleSize, weight: fontWeight(sectionTitleWeight), textStyle: .subheadline, design: .default)
         case .body15:
-            EDSFontSpecification(weight: fontWeight(body15Weight), textStyle: .body, design: .default)
+            EDSFontSpecification(size: body15Size, weight: fontWeight(body15Weight), textStyle: .body, design: .default)
         case .body15Strong:
-            EDSFontSpecification(weight: fontWeight(body15StrongWeight), textStyle: .body, design: .default)
+            EDSFontSpecification(size: body15StrongSize, weight: fontWeight(body15StrongWeight), textStyle: .body, design: .default)
         case .body:
-            EDSFontSpecification(weight: fontWeight(bodyWeight), textStyle: .body, design: .default)
+            EDSFontSpecification(size: bodySize, weight: fontWeight(bodyWeight), textStyle: .body, design: .default)
         case .bodyStrong:
-            EDSFontSpecification(weight: fontWeight(bodyStrongWeight), textStyle: .body, design: .default)
+            EDSFontSpecification(size: bodyStrongSize, weight: fontWeight(bodyStrongWeight), textStyle: .body, design: .default)
         case .caption:
-            EDSFontSpecification(weight: fontWeight(captionWeight), textStyle: .caption, design: .default)
+            EDSFontSpecification(size: captionSize, weight: fontWeight(captionWeight), textStyle: .caption, design: .default)
         case .captionStrong:
-            EDSFontSpecification(weight: fontWeight(captionStrongWeight), textStyle: .caption, design: .default)
+            EDSFontSpecification(size: captionStrongSize, weight: fontWeight(captionStrongWeight), textStyle: .caption, design: .default)
         case .monoCaption:
-            EDSFontSpecification(weight: fontWeight(monoCaptionWeight), textStyle: .caption2, design: .monospaced)
+            EDSFontSpecification(size: monoCaptionSize, weight: fontWeight(monoCaptionWeight), textStyle: .caption2, design: .monospaced)
         }
     }
 

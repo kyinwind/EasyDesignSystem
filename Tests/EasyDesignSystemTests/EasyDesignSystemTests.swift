@@ -7,6 +7,41 @@ import AppKit
 
 @MainActor
 final class EasyDesignSystemTests: XCTestCase {
+    func testFontRolesUseConfiguredTypographySizes() {
+        var tokens = EDSTypographyTokens()
+        tokens.heroSize = 31
+        tokens.pageTitleSize = 21
+        tokens.sectionTitleSize = 17
+        tokens.body15Size = 16
+        tokens.body15StrongSize = 16.5
+        tokens.bodySize = 14
+        tokens.bodyStrongSize = 14.5
+        tokens.captionSize = 12.5
+        tokens.captionStrongSize = 13
+        tokens.monoCaptionSize = 11.5
+
+        XCTAssertEqual(tokens.specification(for: .hero).size, 31)
+        XCTAssertEqual(tokens.specification(for: .pageTitle).size, 21)
+        XCTAssertEqual(tokens.specification(for: .sectionTitle).size, 17)
+        XCTAssertEqual(tokens.specification(for: .body15).size, 16)
+        XCTAssertEqual(tokens.specification(for: .body15Strong).size, 16.5)
+        XCTAssertEqual(tokens.specification(for: .body).size, 14)
+        XCTAssertEqual(tokens.specification(for: .bodyStrong).size, 14.5)
+        XCTAssertEqual(tokens.specification(for: .caption).size, 12.5)
+        XCTAssertEqual(tokens.specification(for: .captionStrong).size, 13)
+        XCTAssertEqual(tokens.specification(for: .monoCaption).size, 11.5)
+    }
+
+    func testDefaultTypographyPreservesVisualHierarchy() {
+        let tokens = EDSTypographyTokens()
+
+        XCTAssertGreaterThan(tokens.specification(for: .hero).size, tokens.specification(for: .pageTitle).size)
+        XCTAssertGreaterThan(tokens.specification(for: .pageTitle).size, tokens.specification(for: .sectionTitle).size)
+        XCTAssertGreaterThan(tokens.specification(for: .sectionTitle).size, tokens.specification(for: .body).size)
+        XCTAssertGreaterThan(tokens.specification(for: .body).size, tokens.specification(for: .caption).size)
+        XCTAssertGreaterThan(tokens.specification(for: .caption).size, tokens.specification(for: .monoCaption).size)
+    }
+
     func testPublicEntrypointsCompile() throws {
         try EDSTheme.shared.applyDefaultThemeFromPackage()
         EDSTheme.shared.applyPreset(.orange)
@@ -338,18 +373,18 @@ final class EasyDesignSystemTests: XCTestCase {
         )
     }
 
-    /// `.normal` 的默认外观契约：浅灰底 + 深字 + 标准尺寸。
+    /// `.normal` 的默认外观契约：中灰底 + 深字 + 标准尺寸。
     ///
     /// 杨哥定版 2026-09-22：灰底次级按钮是最常见的重复场景（工具栏
     /// "检测对话/导出/打开目录"一类），收进 Role 快捷方式表。
-    func testNormalRoleResolvesToSoftNeutral() {
+    func testNormalRoleResolvesToMediumNeutral() {
         let appearance = EDSButton.Role.normal.appearance
-        XCTAssertEqual(appearance.emphasis, .soft)
+        XCTAssertEqual(appearance.emphasis, .medium)
         XCTAssertEqual(appearance.tone, .neutral)
         XCTAssertEqual(appearance.size, .regular)
 
         let visual = appearance.resolved(theme: EDSThemeData())
-        XCTAssertEqual(visual.background?.toHex(), "#F1F1F2")
+        XCTAssertEqual(visual.background?.toHex(), "#D7D7DA")
         XCTAssertNotEqual(visual.background?.toHex(), "#FFFFFF")
     }
 

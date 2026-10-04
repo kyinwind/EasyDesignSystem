@@ -2,6 +2,19 @@
 
 本项目遵循语义化版本管理。`1.0.0` 前，patch 版本用于向后兼容的新增、可见性提升和 Bug 修复；minor 版本用于有架构意义的节点、行为变更或新的对外模型。`1.0.0` 后，新增公开 API 按标准语义化版本管理进入 minor 版本。
 
+## 0.5.4 — 2026-10-05
+
+### Fixed
+
+- 修复 `edsFont` 忽略 `EDSTypographyTokens` 数值字号的问题。此前字体角色只映射为系统 `.headline` / `.subheadline` / `.body` 等语义样式，导致 `sectionTitleSize = 15` 等配置不参与渲染，并在 macOS 上出现区块标题小于正文的反向层级。
+- 字体角色现在以对应 `*Size` token 为基准构造系统字体，并通过 `@ScaledMetric(relativeTo:)` 保留动态字体缩放；字号、字重和字体设计统一由主题 token 驱动。
+- 修正 `.normal` 按钮在 0.5.1 改为 `medium + neutral` 后遗留的旧注释和旧测试；本项仅校准既有契约，不改变运行时视觉行为。
+
+### Compatibility
+
+- 不改变公开 API、主题 JSON 结构及默认字号；已有自定义 Typography token 会恢复为实际生效。
+- 最低平台保持 iOS 17 / macOS 14，不新增第三方依赖。
+
 ## 0.5.3 — 2026-10-04
 
 ### Added
