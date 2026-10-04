@@ -410,7 +410,7 @@ extension EDSButton.Role {
         case .done:
             return EDSButtonAppearance(emphasis: .filled, tone: .success, size: .regular)
         case .normal:
-            return EDSButtonAppearance(emphasis: .soft, tone: .neutral, size: .regular)
+            return EDSButtonAppearance(emphasis: .medium, tone: .neutral, size: .regular)
         }
     }
 }
@@ -452,7 +452,7 @@ extension EDSButtonAppearance {
         // 浅底档的背景色：各色调的 12% 透明版本
         let toneSoftColor: Color
         switch tone {
-        case .neutral: toneSoftColor = EDSInteractionResolver.neutralSurface(brightness: brightness, state: state)
+        case .neutral: toneSoftColor = EDSInteractionResolver.neutralSoftSurface(brightness: brightness, state: state)
         default: toneSoftColor = EDSInteractionResolver.softSurface(family: interactionFamily, seeds: theme.seeds, style: theme.colorStyle, brightness: brightness, state: state)
         }
 
@@ -483,7 +483,7 @@ extension EDSButtonAppearance {
             // 深色外观的适配是所有静态 tone 色的共同欠账，不单独欠在这里。
             foreground = toneColor
             background = tone == .neutral
-                ? EDSInteractionResolver.neutralSurface(brightness: brightness, state: state)
+                ? EDSInteractionResolver.neutralMediumSurface(brightness: brightness, state: state)
                 : EDSInteractionResolver.mediumSurface(family: interactionFamily, seeds: theme.seeds, style: theme.colorStyle, brightness: brightness, state: state)
             borderColor = nil
 

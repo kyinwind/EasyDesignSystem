@@ -340,6 +340,10 @@ final class EasyDesignSystemTests: XCTestCase {
         XCTAssertEqual(appearance.emphasis, .soft)
         XCTAssertEqual(appearance.tone, .neutral)
         XCTAssertEqual(appearance.size, .regular)
+
+        let visual = appearance.resolved(theme: EDSThemeData())
+        XCTAssertEqual(visual.background?.toHex(), "#F1F1F2")
+        XCTAssertNotEqual(visual.background?.toHex(), "#FFFFFF")
     }
 
     /// allCases 必须包含 normal（Role 表 6 条）。
@@ -465,7 +469,7 @@ final class EasyDesignSystemTests: XCTestCase {
             let expectedBackground: Color
             switch tone {
             case .neutral:
-                expectedBackground = EDSInteractionResolver.neutralSurface(brightness: .light, state: .rest)
+                expectedBackground = EDSInteractionResolver.neutralMediumSurface(brightness: .light, state: .rest)
             case .accent:
                 expectedBackground = EDSInteractionResolver.mediumSurface(family: .brand, seeds: theme.seeds, brightness: .light, state: .rest)
             case .danger:
@@ -480,6 +484,17 @@ final class EasyDesignSystemTests: XCTestCase {
 
             XCTAssertNil(visual.borderColor)
         }
+    }
+
+    /// neutral 的 medium 与 soft 必须形成可见的灰度层级，避免浅色页面上退化为无底按钮。
+    func testNeutralMediumAndSoftUseDistinctVisibleSurfaces() {
+        let theme = EDSThemeData()
+        let medium = EDSButtonAppearance(emphasis: .medium, tone: .neutral).resolved(theme: theme)
+        let soft = EDSButtonAppearance(emphasis: .soft, tone: .neutral).resolved(theme: theme)
+
+        XCTAssertEqual(medium.background?.toHex(), "#D7D7DA")
+        XCTAssertEqual(soft.background?.toHex(), "#F1F1F2")
+        XCTAssertNotEqual(medium.background?.toHex(), soft.background?.toHex())
     }
 
     /// medium 文字色必须真的比 tone 深一档（压深 ≠ 原色 ≠ 黑），防回归成纯 tone 或纯黑。

@@ -2,3 +2,10 @@
 "EDSComparisonSection.features.features" = "Features";
 "EDSComparisonSection.features.free" = "Free";
 "EDSComparisonSection.features.pro" = "Pro";
+
+"EDSActionBar.add.title" = "Add";
+"EDSActionBar.edit.title" = "Edit";
+"EDSActionBar.delete.title" = "Delete";
+"EDSActionBar.save.title" = "Save";
+"EDSActionBar.cancel.title" = "Cancel";
+"EDSActionBar.hint.shortcut" = "Shortcut";

@@ -2,3 +2,10 @@
 "EDSComparisonSection.features.features" = "功能";
 "EDSComparisonSection.features.free" = "Free";
 "EDSComparisonSection.features.pro" = "Pro";
+
+"EDSActionBar.add.title" = "新建";
+"EDSActionBar.edit.title" = "编辑";
+"EDSActionBar.delete.title" = "删除";
+"EDSActionBar.save.title" = "保存";
+"EDSActionBar.cancel.title" = "取消";
+"EDSActionBar.hint.shortcut" = "快捷键";

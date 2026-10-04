@@ -68,6 +68,14 @@ public struct EDSDesignSystemGallery: View {
             rowsExample
         case .surfaces:
             surfacesExample
+        case .actions:
+            actionsExample
+        }
+    }
+
+    private var actionsExample: some View {
+        EDSPage("命令编排层", subtitle: "调用方给意图，组件负责翻译成按钮、排布与拥挤降级") {
+            EDSActionBarShowcase(embedsScrollView: false)
         }
     }
 
@@ -378,6 +386,7 @@ private enum GallerySection: String, CaseIterable, Identifiable {
     case buttons
     case rows
     case surfaces
+    case actions
 
     var id: String { rawValue }
 
@@ -402,6 +411,7 @@ private enum GallerySection: String, CaseIterable, Identifiable {
         case .buttons: return "按钮"
         case .rows: return "行与标签"
         case .surfaces: return "容器分层"
+        case .actions: return "命令编排"
         }
     }
 
@@ -413,6 +423,7 @@ private enum GallerySection: String, CaseIterable, Identifiable {
         case .buttons: return "hand.tap"
         case .rows: return "list.bullet.rectangle"
         case .surfaces: return "square.stack.3d.up"
+        case .actions: return "menubar.rectangle"
         }
     }
 
@@ -424,6 +435,7 @@ private enum GallerySection: String, CaseIterable, Identifiable {
         case .buttons: return EDSTheme.shared.colors.danger
         case .rows: return .purple
         case .surfaces: return .teal
+        case .actions: return EDSTheme.shared.colors.warning
         }
     }
 }

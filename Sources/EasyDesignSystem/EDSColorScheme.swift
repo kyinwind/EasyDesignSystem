@@ -225,9 +225,19 @@ public enum EDSInteractionResolver {
         let light = ["#333338", "#29292D", "#202024"], dark = ["#E4E4E7", "#D8D8DC", "#CBCBD0"]
         return Color(hexRGB: (brightness == .dark ? dark : light)[state.index])
     }
-    public static func neutralSurface(brightness: EDSBrightness, state: EDSInteractionState) -> Color {
-        let light = ["#FFFFFF", "#F2F2F3", "#EAEAEC"], dark = ["#242426", "#2D2D30", "#35353A"]
+    /// 25% 中性灰底，用于 `medium + neutral`。
+    public static func neutralMediumSurface(brightness: EDSBrightness, state: EDSInteractionState) -> Color {
+        let light = ["#D7D7DA", "#CECED2", "#C4C4C9"], dark = ["#44444A", "#4D4D54", "#57575F"]
         return Color(hexRGB: (brightness == .dark ? dark : light)[state.index])
+    }
+    /// 12% 中性灰底，用于 `soft + neutral` 及无底按钮的交互反馈。
+    public static func neutralSoftSurface(brightness: EDSBrightness, state: EDSInteractionState) -> Color {
+        let light = ["#F1F1F2", "#EAEAEC", "#E1E1E4"], dark = ["#303034", "#38383D", "#404046"]
+        return Color(hexRGB: (brightness == .dark ? dark : light)[state.index])
+    }
+    /// 兼容旧调用；中性 surface 默认代表 soft 层级。
+    public static func neutralSurface(brightness: EDSBrightness, state: EDSInteractionState) -> Color {
+        neutralSoftSurface(brightness: brightness, state: state)
     }
     private static func resolve(family: EDSInteractionColorFamily, seeds: EDSColorSeeds, brightness: EDSBrightness, state: EDSInteractionState, style: EDSInteractionToneStyle) -> Color {
         let seed: Color = switch family { case .brand: seeds.brand; case .information: seeds.information; case .success: seeds.success; case .warning: seeds.warning; case .danger: seeds.danger }

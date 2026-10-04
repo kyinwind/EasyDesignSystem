@@ -2,6 +2,30 @@
 
 本项目遵循语义化版本管理。`1.0.0` 前，patch 版本用于向后兼容的新增、可见性提升和 Bug 修复；minor 版本用于有架构意义的节点、行为变更或新的对外模型。`1.0.0` 后，新增公开 API 按标准语义化版本管理进入 minor 版本。
 
+## 0.5.1 — 2026-10-04
+
+### Added
+
+- 新增命令编排层 `EDSActionItem` / `EDSActionShortcut` / `EDSActionBar`：调用方描述命令意图，由组件负责翻译成 `EDSButton`、决定默认图标与角色、排布，并在宽度不足时自动降级。
+- 语义 case 收敛为六个 `add / edit / delete / save / cancel / custom`，各自携带默认 SF Symbol 与默认 `EDSButton.Role`；标题默认走 EDS 内置中英文案，调用方可覆盖。
+- `EDSActionShortcut` 用 `isValid` 显式表达"是否存在快捷键"，取代旧实现依赖空格哨兵值的写法；`displayString` 的修饰键顺序修正为 macOS 惯例 `⌃ ⌥ ⇧ ⌘`。
+- `EDSFlowLayout` 新增带 `alignment` 的初始化重载，支持逐行 leading / center / trailing 对齐；原初始化签名保持不变，源码零破坏。
+
+### Changed
+
+- 命令编排层的视觉 100% 由 `EDSThemeData` 驱动，不再有任何硬编码颜色或魔法数字（对照 `MySwiftAppTools.ActionBar` 的橙色硬编码问题）。
+- 快捷键不再写进按钮标题，改由 `keyboardShortcut` 生效、`.help()` 与 `accessibilityHint` 表达，符合 macOS 原生惯例。
+
+### Fixed
+
+- 修复中性按钮灰度层级：`normal`（`soft + neutral`）在浅色外观下恢复可见的浅灰底，`medium + neutral` 使用独立的中灰底，不再与 soft 共用白色背景。
+
+### Compatibility
+
+- 仅新增公开 API，`EDSFlowLayout` 原初始化签名与既有组件行为不变；公开 API 基线已更新至 767 个符号。
+- 最低平台保持 iOS 17 / macOS 14，不新增第三方依赖。
+- Catalog 侧边栏新增「命令编排」页。
+
 ## 0.5.0 — 2026-10-02
 
 ### Changed

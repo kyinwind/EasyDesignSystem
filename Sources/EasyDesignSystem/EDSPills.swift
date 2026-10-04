@@ -1,18 +1,47 @@
 import SwiftUI
 
+// MARK: - EDSFlowAlignment
+
+/// 流式布局的逐行对齐方式。
+///
+/// 独立为通用类型而非复用 `EDSActionBarAlignment`，避免通用布局容器依赖
+/// 具体业务组件的类型（`EDSPillFlow` 同样在用 `EDSFlowLayout`）。
+public enum EDSFlowAlignment: Sendable {
+    case leading
+    case center
+    case trailing
+}
+
 // MARK: - EDSFlowLayout
 
 /// 简单流式布局。子视图会按可用宽度自动换行。
 public struct EDSFlowLayout: Layout {
     public var horizontalSpacing: CGFloat
     public var verticalSpacing: CGFloat
+    public var alignment: EDSFlowAlignment
 
+    /// 原始初始化方法，保持签名不变以保证源码与公开 API 基线零改动。
     public init(
         horizontalSpacing: CGFloat = EDSTheme.shared.spacing.sm,
         verticalSpacing: CGFloat = EDSTheme.shared.spacing.sm
     ) {
         self.horizontalSpacing = horizontalSpacing
         self.verticalSpacing = verticalSpacing
+        self.alignment = .leading
+    }
+
+    /// 带逐行对齐的初始化方法。
+    ///
+    /// `alignment` 刻意不给默认值：一旦给了，两个 init 都能匹配
+    /// `EDSFlowLayout(horizontalSpacing:verticalSpacing:)`，会造成歧义。
+    public init(
+        horizontalSpacing: CGFloat = EDSTheme.shared.spacing.sm,
+        verticalSpacing: CGFloat = EDSTheme.shared.spacing.sm,
+        alignment: EDSFlowAlignment
+    ) {
+        self.horizontalSpacing = horizontalSpacing
+        self.verticalSpacing = verticalSpacing
+        self.alignment = alignment
     }
 
     public func sizeThatFits(
@@ -43,7 +72,8 @@ public struct EDSFlowLayout: Layout {
         var y = bounds.minY
 
         for row in rows {
-            var x = bounds.minX
+            let startX = rowStartX(rowWidth: row.width, bounds: bounds)
+            var x = startX
             for index in row.indices {
                 let size = subviews[index].sizeThatFits(.unspecified)
                 subviews[index].place(
@@ -53,6 +83,17 @@ public struct EDSFlowLayout: Layout {
                 x += size.width + horizontalSpacing
             }
             y += row.height + verticalSpacing
+        }
+    }
+
+    private func rowStartX(rowWidth: CGFloat, bounds: CGRect) -> CGFloat {
+        switch alignment {
+        case .leading:
+            return bounds.minX
+        case .center:
+            return bounds.minX + max((bounds.width - rowWidth) / 2, 0)
+        case .trailing:
+            return bounds.maxX - min(rowWidth, bounds.width)
         }
     }
 
