@@ -38,6 +38,7 @@ public struct EDSActionBarShowcase: View {
         VStack(alignment: .leading, spacing: theme.spacing.xxl) {
             header
             semanticSection
+            customAppearanceSection
             titleSection
             alignmentSection
             sizeSection
@@ -47,6 +48,30 @@ public struct EDSActionBarShowcase: View {
         }
         .padding(theme.spacing.xl)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: 自定义按钮外观
+
+    private var customAppearanceSection: some View {
+        section(
+            "Custom · 三维按钮样式",
+            subtitle: "可继续使用 role 预设，也可直接组合 Emphasis / Tone / Size；单项 size 可覆盖 ActionBar 的统一尺寸。"
+        ) {
+            EDSActionBar([
+                .custom(title: "角色预设", systemImage: "square.and.arrow.up", role: .secondary) {
+                    lastAction = "roleCustom"
+                },
+                .custom(
+                    title: "直接指定",
+                    systemImage: "exclamationmark.triangle",
+                    emphasis: .outline,
+                    tone: .warning,
+                    size: .large
+                ) {
+                    lastAction = "dimensionCustom"
+                },
+            ], alignment: .leading, size: .small, layoutStyle: .horizontal)
+        }
     }
 
     // MARK: 头部

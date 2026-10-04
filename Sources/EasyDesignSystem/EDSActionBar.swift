@@ -82,8 +82,9 @@ public struct EDSActionShortcut: Equatable, Sendable {
 ///
 /// 设计原则：**EDS 只负责"长什么样"，不负责"业务叫什么"**。
 /// 语义 case 自带默认图标与默认按钮角色（属视觉决策），标题走 EDS 内置双语
-/// 且调用方可覆盖；`.custom` 只接受 `EDSButton.Role` 语义，**不接受 `Color`**——
-/// 旧版 `ActionBarButtonDisplayStyle` 允许传任意颜色，正是橙色硬编码的入口。
+/// 且调用方可覆盖；`.custom` 既可使用 `EDSButton.Role` 预设，也可直接指定
+/// `Emphasis / Tone / Size` 三个正交维度，但**不接受 `Color`**——旧版
+/// `ActionBarButtonDisplayStyle` 允许传任意颜色，正是橙色硬编码的入口。
 ///
 /// ```swift
 /// EDSActionBar([
@@ -143,6 +144,24 @@ public enum EDSActionItem: Identifiable {
         action: () -> Void
     )
 
+    /// 使用按钮三维原语描述自定义动作。
+    ///
+    /// `emphasis` 刻意不提供默认值，使只传标题的旧调用稳定匹配 `role` 重载。
+    /// `size` 省略时跟随 `EDSActionBar(size:)`，显式传入时只覆盖当前按钮。
+    /// 三维 `custom(...)` 工厂的内部存储，不作为调用方直接使用的语义 case。
+    @_spi(EDSActionItemImplementation)
+    case styledCustom(
+        title: String,
+        systemImage: String? = nil,
+        emphasis: EDSButton.Emphasis,
+        tone: EDSButton.Tone = .accent,
+        size: EDSButton.Size? = nil,
+        enabled: Bool = true,
+        shortcut: EDSActionShortcut? = nil,
+        id: String = UUID().uuidString,
+        action: () -> Void
+    )
+
     /// 稳定且唯一的 id。
     ///
     /// 旧实现从 title 拼字符串，同名的两个 `.custom` 会碰撞，导致 SwiftUI diff 错乱。
@@ -155,7 +174,8 @@ public enum EDSActionItem: Identifiable {
              .save(_, _, _, let id, _),
              .cancel(_, _, _, let id, _):
             return id
-        case .custom(_, _, _, _, _, let id, _):
+        case .custom(_, _, _, _, _, let id, _),
+             .styledCustom(_, _, _, _, _, _, _, let id, _):
             return id
         }
     }
@@ -164,6 +184,34 @@ public enum EDSActionItem: Identifiable {
 // MARK: - EDSActionItem 解析
 
 extension EDSActionItem {
+
+    /// 创建可直接指定按钮三维样式的自定义动作。
+    ///
+    /// 保留原有 `custom(... role:)` enum case，因此既有源码与公开 API 不变；
+    /// 这个重载要求显式传 `emphasis`，避免只传标题时产生重载歧义。
+    public static func custom(
+        title: String,
+        systemImage: String? = nil,
+        emphasis: EDSButton.Emphasis,
+        tone: EDSButton.Tone = .accent,
+        size: EDSButton.Size? = nil,
+        enabled: Bool = true,
+        shortcut: EDSActionShortcut? = nil,
+        id: String = UUID().uuidString,
+        action: @escaping () -> Void
+    ) -> EDSActionItem {
+        .styledCustom(
+            title: title,
+            systemImage: systemImage,
+            emphasis: emphasis,
+            tone: tone,
+            size: size,
+            enabled: enabled,
+            shortcut: shortcut,
+            id: id,
+            action: action
+        )
+    }
 
     var resolvedTitle: String {
         switch self {
@@ -177,7 +225,8 @@ extension EDSActionItem {
             return title ?? edsActionLocalized("EDSActionBar.save.title")
         case .cancel(let title, _, _, _, _):
             return title ?? edsActionLocalized("EDSActionBar.cancel.title")
-        case .custom(let title, _, _, _, _, _, _):
+        case .custom(let title, _, _, _, _, _, _),
+             .styledCustom(let title, _, _, _, _, _, _, _, _):
             return title
         }
     }
@@ -189,7 +238,8 @@ extension EDSActionItem {
         case .delete:   return "trash"
         case .save:     return "square.and.arrow.down"
         case .cancel:   return "xmark"
-        case .custom(_, let systemImage, _, _, _, _, _):
+        case .custom(_, let systemImage, _, _, _, _, _),
+             .styledCustom(_, let systemImage, _, _, _, _, _, _, _):
             return systemImage
         }
     }
@@ -203,6 +253,27 @@ extension EDSActionItem {
         case .cancel:   return .normal
         case .custom(_, _, let role, _, _, _, _):
             return role
+        case .styledCustom:
+            return .secondary
+        }
+    }
+
+    /// 解析最终按钮外观。Role 是预设入口；三维重载则直接使用调用方的组合。
+    func resolvedAppearance(defaultSize: EDSButton.Size) -> EDSButtonAppearance {
+        switch self {
+        case .styledCustom(_, _, let emphasis, let tone, let size, _, _, _, _):
+            return EDSButtonAppearance(
+                emphasis: emphasis,
+                tone: tone,
+                size: size ?? defaultSize
+            )
+        default:
+            let appearance = resolvedRole.appearance
+            return EDSButtonAppearance(
+                emphasis: appearance.emphasis,
+                tone: appearance.tone,
+                size: defaultSize
+            )
         }
     }
 
@@ -214,7 +285,8 @@ extension EDSActionItem {
              .save(_, let enabled, _, _, _),
              .cancel(_, let enabled, _, _, _):
             return enabled
-        case .custom(_, _, _, let enabled, _, _, _):
+        case .custom(_, _, _, let enabled, _, _, _),
+             .styledCustom(_, _, _, _, _, let enabled, _, _, _):
             return enabled
         }
     }
@@ -227,7 +299,8 @@ extension EDSActionItem {
              .save(_, _, let shortcut, _, _),
              .cancel(_, _, let shortcut, _, _):
             return shortcut
-        case .custom(_, _, _, _, let shortcut, _, _):
+        case .custom(_, _, _, _, let shortcut, _, _),
+             .styledCustom(_, _, _, _, _, _, let shortcut, _, _):
             return shortcut
         }
     }
@@ -240,7 +313,8 @@ extension EDSActionItem {
              .save(_, _, _, _, let action),
              .cancel(_, _, _, _, let action):
             return action
-        case .custom(_, _, _, _, _, _, let action):
+        case .custom(_, _, _, _, _, _, let action),
+             .styledCustom(_, _, _, _, _, _, _, _, let action):
             return action
         }
     }
@@ -376,7 +450,7 @@ public struct EDSActionBar: View {
     }
 
     private func button(for item: EDSActionItem, forcePlain: Bool = false) -> some View {
-        let appearance = item.resolvedRole.appearance
+        let appearance = item.resolvedAppearance(defaultSize: size)
         let emphasis = forcePlain ? EDSButton.Emphasis.plain : appearance.emphasis
 
         return AnyView(
@@ -384,7 +458,7 @@ public struct EDSActionBar: View {
                 item.resolvedTitle,
                 emphasis: emphasis,
                 tone: appearance.tone,
-                size: size,
+                size: appearance.size,
                 systemImage: item.resolvedSystemImage
             ) {
                 item.perform()

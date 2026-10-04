@@ -60,6 +60,39 @@ final class EDSActionBarTests: XCTestCase {
         XCTAssertEqual(item(.custom(title: "导出") {}).resolvedRole, .secondary)
     }
 
+    func testCustomSupportsDirectButtonDimensions() {
+        let item = EDSActionItem.custom(
+            title: "警告操作",
+            emphasis: .outline,
+            tone: .warning,
+            size: .large
+        ) {}
+
+        let appearance = item.resolvedAppearance(defaultSize: .small)
+        XCTAssertEqual(appearance.emphasis, .outline)
+        XCTAssertEqual(appearance.tone, .warning)
+        XCTAssertEqual(appearance.size, .large)
+    }
+
+    func testCustomDimensionSizeFallsBackToActionBarSize() {
+        let item = EDSActionItem.custom(
+            title: "稍后处理",
+            emphasis: .plain,
+            tone: .neutral
+        ) {}
+
+        XCTAssertEqual(item.resolvedAppearance(defaultSize: .small).size, .small)
+    }
+
+    func testRoleCustomKeepsPresetStyleAndUsesActionBarSize() {
+        let item = EDSActionItem.custom(title: "导出", role: .danger) {}
+        let appearance = item.resolvedAppearance(defaultSize: .large)
+
+        XCTAssertEqual(appearance.emphasis, .filled)
+        XCTAssertEqual(appearance.tone, .danger)
+        XCTAssertEqual(appearance.size, .large)
+    }
+
     func testSemanticSystemImages() {
         XCTAssertEqual(item(.add {}).resolvedSystemImage, "plus")
         XCTAssertEqual(item(.edit {}).resolvedSystemImage, "pencil")
