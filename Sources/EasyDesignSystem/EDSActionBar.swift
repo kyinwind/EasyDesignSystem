@@ -324,6 +324,12 @@ extension EDSActionItem {
         guard let shortcut = resolvedShortcut, shortcut.isValid else { return "" }
         return "\(edsActionLocalized("EDSActionBar.hint.shortcut")) \(shortcut.displayString)"
     }
+
+    /// 鼠标悬停提示：标题后附快捷键；未配置快捷键时只显示标题。
+    var helpText: String {
+        guard let shortcut = resolvedShortcut, shortcut.isValid else { return resolvedTitle }
+        return "\(resolvedTitle)（\(shortcut.displayString)）"
+    }
 }
 
 // MARK: - 布局参数
@@ -464,7 +470,7 @@ public struct EDSActionBar: View {
                 item.perform()
             }
             .disabled(!item.isEnabled)
-            .help(item.resolvedTitle)
+            .help(item.helpText)
             .accessibilityLabel(item.resolvedTitle)
             .accessibilityHint(item.accessibilityHintText)
             .edsShortcut(item.resolvedShortcut)

@@ -220,7 +220,7 @@ public struct EDSActionBarShowcase: View {
     private var stateSection: some View {
         section(
             "禁用状态与快捷键",
-            subtitle: "快捷键不显示在标签里，通过 keyboardShortcut 生效、通过 .help() 与无障碍提示表达。"
+            subtitle: "快捷键不占用按钮标签；通过 keyboardShortcut 生效，鼠标悬停与无障碍提示会显示快捷键。"
         ) {
             VStack(alignment: .leading, spacing: theme.spacing.md) {
                 row("全可用") {

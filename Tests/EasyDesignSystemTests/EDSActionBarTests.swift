@@ -31,6 +31,8 @@ final class EDSActionBarTests: XCTestCase {
         XCTAssertEqual(EDSActionShortcut.commandS.displayString, "⌘S")
         XCTAssertEqual(EDSActionShortcut.delete.displayString, "⌫")
         XCTAssertEqual(EDSActionShortcut.escape.displayString, "Esc")
+    }
+
     /// 修饰键按 macOS 惯例顺序拼接（⌃ ⌥ ⇧ ⌘），而非旧的逆序写法。
     func testShortcutDisplayStringFollowsMacOSOrder() {
         XCTAssertEqual(
@@ -41,7 +43,6 @@ final class EDSActionBarTests: XCTestCase {
             EDSActionShortcut(key: "s", modifiers: [.command, .option, .control]).displayString,
             "⌃⌥⌘S"
         )
-    }
     }
 
     func testCommandFactoryEquality() {
@@ -144,6 +145,14 @@ final class EDSActionBarTests: XCTestCase {
 
         let withoutShortcut = EDSActionItem.save {}
         XCTAssertTrue(withoutShortcut.accessibilityHintText.isEmpty)
+    }
+
+    func testHoverHelpShowsShortcutWhenConfigured() {
+        let withShortcut = EDSActionItem.save(title: "保存", shortcut: .commandS) {}
+        XCTAssertEqual(withShortcut.helpText, "保存（⌘S）")
+
+        let withoutShortcut = EDSActionItem.cancel(title: "取消") {}
+        XCTAssertEqual(withoutShortcut.helpText, "取消")
     }
 
     // MARK: 便捷工具
